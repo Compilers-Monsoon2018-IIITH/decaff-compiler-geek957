@@ -1,0 +1,41 @@
+class Program
+{
+// max size of array 100
+	int v1[100];
+	int mini;
+
+	int maxi;
+
+	void main()
+	{
+		callout("printf", "Enter the size of vectors: ");
+		mini = 0;
+		maxi = 100;	
+		n = 10;
+
+		callout("printf", "Enter the elements in the first vector: \n");
+
+		for i = 0, n
+		{
+			v1[i] = i;
+		}
+
+		for i = 0, n
+		{
+			if ( v1[i] > maxi)
+          	{
+      			maxi = v1[i];
+          	}
+          	if ( v1[i] < mini)
+          	{
+            	mini = v1[i];
+          	}
+		}		
+
+
+		callout("printf","Maximum element found in the array is %d\n",maxi);
+        callout("printf","Minimum element found in the array is %d\n",mini);
+
+	}
+
+}
