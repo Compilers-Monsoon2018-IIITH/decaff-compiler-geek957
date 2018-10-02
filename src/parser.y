@@ -142,33 +142,23 @@ location : ID
 expr : location
 	 | method_call
 	 | lit
-	 | expr bin_op
+	 | expr PLUS expr
+	 | expr MINUS expr
+	 | expr MUL expr
+	 | expr DIV expr
+	 | expr MOD expr
+	 | expr LT expr
+	 | expr GT expr
+	 | expr LE expr
+	 | expr GE expr
+	 | expr EE expr
+	 | expr NE expr
+	 | expr AND expr
+	 | expr OR expr
 	 | MINUS expr
 	 | EXCL expr
 	 | '(' expr ')'
 
-
-bin_op : arith_op
-	   | rel_op
-	   | eq_op
-	   | cond_op
-
-arith_op : PLUS expr
-		 | MINUS expr 
-		 | MUL expr 
-		 | DIV expr 
-		 | MOD expr
-
-rel_op : LT expr
-	   | GT expr
-	   | LE expr
-	   | GE expr
-	
-eq_op : EE expr
-	  | NE expr
-
-cond_op : AND expr
-		| OR expr
 
 lit : int_lit
 	| CHAR
