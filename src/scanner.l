@@ -1,5 +1,9 @@
 %{
-#include "parser.tab.h"
+#include <bits/stdc++.h>
+#include "parser.tab.hpp"
+#define YY_DECL extern "C" int yylex()
+/*extern union Node yylval;*/
+using namespace std;
 int lineno = 0;
 %}
 
@@ -29,8 +33,8 @@ hex_number 0x[0-9a-fA-F][0-9a-fA-F]*
 "false"				{printf("found false\n");return FALSE;}
 ">="				{printf("found ge\n");return GE;}
 "<="				{printf("found le\n");return LE;}
-"+="				{printf("found +=\n");return '+=';}
-"-="				{printf("found -=\n");return '-=';}
+"+="				{printf("found +=\n");return PLE;}
+"-="				{printf("found -=\n");return SUE;}
 "=="				{printf("found ==\n");return EE;}
 "!="				{printf("found !=\n");return NE;}
 "!"					{printf("found excl\n");return EXCL;}
