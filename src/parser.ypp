@@ -1,26 +1,32 @@
 %{
 	#include <bits/stdc++.h>
-	/*extern FILE *yyin;
-	extern char* yytext;*/
+	#include "ast.h"
+	extern FILE *yyin;
+	extern char* yytext;
 	extern "C" int yylex();
 	extern int yyparse();
 	extern FILE *yyin;
 	extern int line_num;
-	// extern union Node yylval;
 	extern int errors;
 	void yyerror(const char *s);
 	int errors=0;
+	class Program* start = NULL;
 %}
 
-/*%union{
-  	//int num;
- 	char *an;
-	char *identifier_val;
-  	char *rel;
-	char *con;
-	char *ari;
-	class Astprogram *pno;
-	class declarlist *decllis;
+%union{
+  	int number;
+  	char *str;
+ 	//char *an;
+	//char *identifier_val;
+  	//char *rel;
+	//char *con;
+	//char *ari;
+	class Program *pro;
+	class Field_declarations *fd_ds;
+	class Field_declaration *fd_d;
+	class Var_declarations *vr_ds;
+	class Var_declaration *vr_d;
+	/*class declarlist *decllis;
 	class decl *decla;
 	class idlist *idlino;
 	class id *idno;
@@ -39,15 +45,14 @@
 	class numb *numno;
 	class lf *lfno;
 	class ab *abno;
-	class id1 *id1no;
-  }*/
+	class id1 *id1no;*/
+  }
 
 
 
 %token CLASS
 %token PROGRAM
-%token INT
-%token BOOLEAN
+%token <str> TYPE
 %token VOID
 %token IF
 %token FOR
@@ -56,8 +61,7 @@
 %token CONTINUE
 %token ELSE
 %token CALLOUT
-%token TRUE
-%token FALSE
+%token BOOL_LIT
 %token GE
 %token LE
 %token PLE
@@ -83,11 +87,10 @@
 %token ')'
 %token '('
 %token ';'
-%token NUMBER
-%token HEX_NUMBER
+%token <number> INT_LIT
 %token CHAR
 %token STRING
-%token ID
+%token <str> ID
 
 %left EE NE
 %left AND OR
@@ -96,48 +99,84 @@
 %left MUL DIV MOD
 %right EXCL '='
 
+%type <pro> program
+%type <fd_ds> field_decls
+%type <fd_d> field_decl
+%type <vr_ds> vars_array_incl
+%type <vr_d> var_array_incl
+
 
 
 
 %%
-program : CLASS  PROGRAM '{' field_decls method_decls '}'
+program : CLASS  PROGRAM '{' field_decls method_decls '}' 
+							/*{
+  								$$ = new Program($4, $5);
+    							start = $$;
+  							}*/
 		| CLASS  PROGRAM '{' field_decls '}'
+							{
+  								$$ = new Program($4);
+    							start = $$;
+  							}
 		| CLASS  PROGRAM '{' method_decls '}'
+							/*{
+  								$$ = new Program(NULL, $4);
+    							start = $$;
+  							}*/
 		| CLASS  PROGRAM '{' '}'
+							{
+  								$$ = new Program(NULL);
+    							start = $$;
+  							}
 
 /* FIELD DECLARATIONS */
 field_decls : field_decl 
-			| field_decls field_decl
+					{$$ = new Field_declarations(); $$->Push_back($1);}
+			| field_decls field_decl 
+					{$$->Push_back($2);}
 
-field_decl : type vars_array_incl ';'
+field_decl : TYPE vars_array_incl ';'
+					{$$ = new Field_declaration(string($1), $2);}
 
 vars_array_incl : var_array_incl 
+					{$$ = new Var_declarations(); $$->Push_back($1);}
 				| vars_array_incl ',' var_array_incl
+					{$$->Push_back($3);}
 
 var_array_incl : ID 
-			   | ID '[' int_lit ']'
+					{$$ = new Var_declaration(string($1));}
+			   | ID '[' INT_LIT ']'
+			   		{$$ = new Var_declaration(string($1),$3);}
 
 /* METHOD DECLARATIONS */
 method_decls : method_decl 
 			 | method_decls method_decl
 
-method_decl : type ID '(' meth_arg_decls ')' block
-			| type ID '(' ')' block
+method_decl : TYPE ID '(' meth_arg_decls ')' block
+			| TYPE ID '(' ')' block
 			| VOID ID '(' meth_arg_decls ')' block
 			| VOID ID '(' ')' block
 
 meth_arg_decls : meth_arg_decl 
 			   | meth_arg_decls ',' meth_arg_decl
 
-meth_arg_decl : type ID
+meth_arg_decl : TYPE ID
 
-block : '{' field_decls statements '}'
-	  | '{' field_decls '}'
+block : '{' field_method_decls statements '}'
+	  | '{' field_method_decl '}'
 	  | '{' statements '}'
 	  | '{' '}'
 
-type : INT 
-	 | BOOLEAN
+field_method_decls : field_method_decl
+			  	   | field_method_decls field_method_decl
+
+field_method_decl : TYPE vars_method ';'
+
+vars_method : ID
+			| vars_method ',' ID
+
+
 
 statements : statement 
 		   | statements statement
@@ -197,18 +236,18 @@ expr : location
 	 | '(' expr ')'
 
 
-lit : int_lit
+lit : INT_LIT
 	| CHAR
-	| bool_lit
+	| BOOL_LIT
 
 
-int_lit : NUMBER
-		| HEX_NUMBER
+/*int_lit : NUMBER {$$ = new Int_lit($1);}
+		| HEX_NUMBER {$$ = new Int_lit($1);}
+*/
 
 
-
-bool_lit : TRUE
-		 | FALSE
+/*bool_lit : TRUE
+		 | FALSE*/
 
 
 
@@ -230,6 +269,9 @@ main(int argc, char **argv)
 	printf("About to start\n");
 	yyin = fopen(argv[1], "r");
 	yyparse();
+	DFS* dfs;
+	dfs=new DFS();
+	start->accept(dfs);
 	printf("Parsing Over\n");
 }
 

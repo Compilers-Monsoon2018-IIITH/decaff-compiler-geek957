@@ -19,8 +19,8 @@ hex_number 0x[0-9a-fA-F][0-9a-fA-F]*
 %%
 "class"             {printf("found class\n");return CLASS;}
 "Program"			{printf("found program\n");return PROGRAM;}
-"int"				{printf("found int\n");return INT;}
-"boolean"			{printf("found boolean\n");return BOOLEAN;}
+"int"				{yylval.str = strdup(yytext);printf("found int\n");return TYPE;}
+"boolean"			{yylval.str = strdup(yytext);printf("found boolean\n");return TYPE;}
 "void"				{printf("found void\n");return VOID;}
 "if"				{printf("found if\n");return IF;}
 "for"				{printf("found for\n");return FOR;}
@@ -29,8 +29,8 @@ hex_number 0x[0-9a-fA-F][0-9a-fA-F]*
 "continue"			{printf("found continue\n");return CONTINUE;}
 "else"				{printf("found else\n");return ELSE;}
 "callout"			{printf("found callout\n");return CALLOUT;}
-"true"				{printf("found true\n");return TRUE;}
-"false"				{printf("found false\n");return FALSE;}
+"true"				{yylval.str = strdup(yytext);printf("found true\n");return BOOL_LIT;}
+"false"				{yylval.str = strdup(yytext);printf("found false\n");return BOOL_LIT;}
 ">="				{printf("found ge\n");return GE;}
 "<="				{printf("found le\n");return LE;}
 "+="				{printf("found +=\n");return PLE;}
@@ -56,9 +56,9 @@ hex_number 0x[0-9a-fA-F][0-9a-fA-F]*
 "("					{printf("found (\n");return '(';}
 ")"					{printf("found )\n");return ')';}
 ";"					{printf("found ;\n");return ';';}
-{number}			{printf("found number\n");return NUMBER;}
-{hex_number}		{printf("found HEX_number\n");return HEX_NUMBER;}
-{id}				{printf("found id\n");return ID;}
+{number}			{yylval.number = atoi(yytext);printf("found number\n");return INT_LIT;}
+{hex_number}		{yylval.number = atoi(yytext);printf("found HEX_number\n");return INT_LIT;}
+{id}				{yylval.str = strdup(yytext);printf("found id\n");return ID;}
 {character} 		{printf("found char\n");return CHAR;}
 \"{string}*\" 		{printf("found string\n");return STRING;}
 {delim}				/* Ignore whitespaces tabs and newlines */
