@@ -21,7 +21,7 @@ hex_number 0x[0-9a-fA-F][0-9a-fA-F]*
 "Program"			{printf("found program\n");return PROGRAM;}
 "int"				{yylval.str = strdup(yytext);printf("found int\n");return TYPE;}
 "boolean"			{yylval.str = strdup(yytext);printf("found boolean\n");return TYPE;}
-"void"				{printf("found void\n");return VOID;}
+"void"				{yylval.str = strdup(yytext);printf("found void\n");return VOID;}
 "if"				{printf("found if\n");return IF;}
 "for"				{printf("found for\n");return FOR;}
 "return"			{printf("found return\n");return RETURN;}

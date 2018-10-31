@@ -26,6 +26,15 @@
 	class Field_declaration *fd_d;
 	class Var_declarations *vr_ds;
 	class Var_declaration *vr_d;
+	class Method_declarations *md_ds;
+	class Method_declaration *md_d;
+	class Method_args_declarations *md_ag_ds;
+	class Method_args_declaration *md_ag_d;
+	class Block *blk;
+	class Field_method_declarations *fd_md_ds;
+	class Field_method_declaration *fd_md_d;
+	class Var_method_declarations *vr_md_ds;
+	class Var_method_declaration *vr_md_d;
 	/*class declarlist *decllis;
 	class decl *decla;
 	class idlist *idlino;
@@ -53,7 +62,7 @@
 %token CLASS
 %token PROGRAM
 %token <str> TYPE
-%token VOID
+%token <str> VOID
 %token IF
 %token FOR
 %token RETURN
@@ -104,29 +113,38 @@
 %type <fd_d> field_decl
 %type <vr_ds> vars_array_incl
 %type <vr_d> var_array_incl
+%type <md_ds> method_decls
+%type <md_d> method_decl
+%type <md_ag_ds> meth_arg_decls
+%type <md_ag_d> meth_arg_decl
+%type <blk> block
+%type <fd_md_ds> field_method_decls 
+%type <fd_md_d> field_method_decl
+%type <vr_md_ds> vars_method
+%type <vr_md_d> var_method 
 
 
 
 
 %%
 program : CLASS  PROGRAM '{' field_decls method_decls '}' 
-							/*{
+							{
   								$$ = new Program($4, $5);
     							start = $$;
-  							}*/
+  							}
 		| CLASS  PROGRAM '{' field_decls '}'
 							{
-  								$$ = new Program($4);
+  								$$ = new Program($4, NULL);
     							start = $$;
   							}
 		| CLASS  PROGRAM '{' method_decls '}'
-							/*{
+							{
   								$$ = new Program(NULL, $4);
     							start = $$;
-  							}*/
+  							}
 		| CLASS  PROGRAM '{' '}'
 							{
-  								$$ = new Program(NULL);
+  								$$ = new Program(NULL, NULL);
     							start = $$;
   							}
 
@@ -150,32 +168,51 @@ var_array_incl : ID
 			   		{$$ = new Var_declaration(string($1),$3);}
 
 /* METHOD DECLARATIONS */
-method_decls : method_decl 
+method_decls : method_decl
+				{$$ = new Method_declarations(); $$->Push_back($1);} 
 			 | method_decls method_decl
+			 	{$$->Push_back($2);}
 
 method_decl : TYPE ID '(' meth_arg_decls ')' block
+				{$$ = new Method_declaration(string($1), string($2), $4, $6);}
 			| TYPE ID '(' ')' block
+				{$$ = new Method_declaration(string($1), string($2), NULL, $5);}
 			| VOID ID '(' meth_arg_decls ')' block
+				{$$ = new Method_declaration(string($1), string($2), $4, $6);}
 			| VOID ID '(' ')' block
+				{$$ = new Method_declaration(string($1), string($2), NULL, $5);}
 
 meth_arg_decls : meth_arg_decl 
+					{$$ = new Method_args_declarations(); $$->Push_back($1);}
 			   | meth_arg_decls ',' meth_arg_decl
+			   		{$$->Push_back($3);}
 
 meth_arg_decl : TYPE ID
+					{$$ = new Method_args_declaration(string($1), string($2));}
 
 block : '{' field_method_decls statements '}'
-	  | '{' field_method_decl '}'
+			/*{$$ = new Block($2, $3);}*/
+	  | '{' field_method_decls '}'
+	  		{$$ = new Block($2);}
 	  | '{' statements '}'
+	  		/*{$$ = new Block();}*/
 	  | '{' '}'
+	  		{$$ = new Block(NULL);}
 
 field_method_decls : field_method_decl
+						{$$ = new Field_method_declarations(); $$->Push_back($1);}
 			  	   | field_method_decls field_method_decl
+			  	   		{$$->Push_back($2);}
 
 field_method_decl : TYPE vars_method ';'
+						{$$ = new Field_method_declaration(string($1), $2);}
 
-vars_method : ID
-			| vars_method ',' ID
+vars_method : var_method
+				{$$ = new Var_method_declarations(); $$->Push_back($1);}
+			| vars_method ',' var_method
+				{$$->Push_back($3);}
 
+var_method : ID {$$ = new Var_method_declaration(string($1));}
 
 
 statements : statement 
