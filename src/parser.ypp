@@ -16,11 +16,7 @@
 %union{
   	int number;
   	char *str;
- 	//char *an;
-	//char *identifier_val;
-  	//char *rel;
-	//char *con;
-	//char *ari;
+  	char chr;
 	class Program *pro;
 	class Field_declarations *fd_ds;
 	class Field_declaration *fd_d;
@@ -35,26 +31,30 @@
 	class Field_method_declaration *fd_md_d;
 	class Var_method_declarations *vr_md_ds;
 	class Var_method_declaration *vr_md_d;
-	/*class declarlist *decllis;
-	class decl *decla;
-	class idlist *idlino;
-	class id *idno;
-	class statlist *stlino;
-	class stat *stno;
-	class ass *assno;
-	class ifs *ifsno;
-	class fors *forsno;
-	class whiles *whileno;
-	class lab *labno;
-	class gotos *gono;
-	class read *readno;
-	class print *printno;
-	class bl *blno;
-	class expr *exprno;
-	class numb *numno;
-	class lf *lfno;
-	class ab *abno;
-	class id1 *id1no;*/
+	class Statements *stmnts;
+	class Statement *stmnt;
+	class Assignment *assgnmnt;
+	class If_else *ifelse;
+	class Forr *forr;
+	class Return *ret;
+	class Break *brk;
+	class Continue *cont;
+	class Assign_op *assign_op;
+	class Function_call *func_call;
+	class Method_call *mthd_call;
+	class Call_out *call_out;
+	class Call_out_args *call_out_args;
+	class Call_out_arg *call_out_arg;
+	class Location *loc;
+	class Exprs *exprs;
+	class Expr *expr;
+	class Literal *lit;
+	class Integer_literal *int_lit;
+	class Char_literal *char_lit;
+	class Bool_literal *bool_lit;
+	class Binary_expr *bnry_expr;
+	class Unary_expr *unry_expr;
+	class Bracket_expr *brckt_expr;
   }
 
 
@@ -70,24 +70,24 @@
 %token CONTINUE
 %token ELSE
 %token CALLOUT
-%token BOOL_LIT
-%token GE
-%token LE
-%token PLE
-%token SUE
-%token EE
-%token NE
-%token EXCL
-%token '='
-%token GT
-%token LT
-%token PLUS
-%token MINUS
-%token MUL
-%token DIV
-%token MOD
-%token AND
-%token OR
+%token <str> BOOL_LIT
+%token <str> GE
+%token <str> LE
+%token <str> PLE
+%token <str> SUE
+%token <str> EE
+%token <str> NE
+%token <str> EXCL
+%token <str> '='
+%token <str> GT
+%token <str> LT
+%token <str> PLUS
+%token <str> MINUS
+%token <str> MUL
+%token <str> DIV
+%token <str> MOD
+%token <str> AND
+%token <str> OR
 %token ','
 %token '}'
 %token '{'
@@ -97,8 +97,8 @@
 %token '('
 %token ';'
 %token <number> INT_LIT
-%token CHAR
-%token STRING
+%token <str> CHAR
+%token <str> STRING
 %token <str> ID
 
 %left EE NE
@@ -121,7 +121,19 @@
 %type <fd_md_ds> field_method_decls 
 %type <fd_md_d> field_method_decl
 %type <vr_md_ds> vars_method
-%type <vr_md_d> var_method 
+%type <vr_md_d> var_method
+%type <stmnts> statements 
+%type <stmnt> statement
+%type <assign_op> assign_op
+%type <func_call> function_call
+%type <call_out_args> callout_args
+%type <call_out_arg> callout_arg
+%type <loc> location
+%type <exprs> exprs
+%type <expr> expr
+%type <lit> lit
+
+
 
 
 
@@ -191,13 +203,13 @@ meth_arg_decl : TYPE ID
 					{$$ = new Method_args_declaration(string($1), string($2));}
 
 block : '{' field_method_decls statements '}'
-			/*{$$ = new Block($2, $3);}*/
+			{$$ = new Block($2, $3);}
 	  | '{' field_method_decls '}'
-	  		{$$ = new Block($2);}
+	  		{$$ = new Block($2, NULL);}
 	  | '{' statements '}'
-	  		/*{$$ = new Block();}*/
+	  		{$$ = new Block(NULL, $2);}
 	  | '{' '}'
-	  		{$$ = new Block(NULL);}
+	  		{$$ = new Block(NULL, NULL);}
 
 field_method_decls : field_method_decl
 						{$$ = new Field_method_declarations(); $$->Push_back($1);}
@@ -216,75 +228,116 @@ var_method : ID {$$ = new Var_method_declaration(string($1));}
 
 
 statements : statement 
-		   | statements statement
+				{$$ = new Statements(); $$->Push_back($1);}
+		   | statements statement 
+		   		{$$->Push_back($2);}
 
-statement : location assign_op expr ';'
- 		  | method_call ';'
- 		  | IF '(' expr ')' block ELSE block
- 		  | IF '(' expr ')' block
+statement : location assign_op expr ';' 
+				{$$ = new Assignment($1,$2,$3);}
+ 		  | function_call ';'
+ 		  		{$$ = $1;}
+ 		  | IF '(' expr ')' block ELSE block 
+ 		  		{$$ = new If_else($3,$5,$7);}
+ 		  | IF '(' expr ')' block 
+ 		  		{$$ = new If_else($3,$5,NULL);}
  		  | FOR ID '=' expr ',' expr block
+ 		  		{$$ = new Forr(string($2),$4,$6,$7);}
  		  | RETURN expr ';'
+ 		  		{$$ = new Return($2);}
  		  | RETURN ';'
+ 		  		{$$ = new Return(NULL);}
  		  | BREAK ';'
+ 		  		{$$ = new Break();}
  		  | CONTINUE ';'
+ 		  		{$$ = new Continue();}
  		  | block
+ 		  		{$$ = $1;}
 
 
 
-assign_op : '='
+assign_op : '=' 
+				{$$ = new Assign_op(string($1));}
 		  | PLE
+		  		{$$ = new Assign_op(string($1));}
 		  | SUE 
+		  		{$$ = new Assign_op(string($1));}
 
-method_call : ID '(' exprs ')'
+function_call : ID '(' exprs ')'
+				{$$ = new Method_call(string($1),$3);}
 			| ID '(' ')'
+				{$$ = new Method_call(string($1),NULL);}
 			| CALLOUT '(' STRING  callout_args ')'
+				{$$ = new Call_out(string($3),$4);}
 			| CALLOUT '(' STRING ')'
-
-exprs : expr
-	  | exprs ',' expr
+				{$$ = new Call_out(string($3),NULL);}
 
 callout_args : ',' callout_arg 
+				{$$ = new Call_out_args(); $$->Push_back($2);} 
 			 | callout_args ',' callout_arg
+			 	{$$->Push_back($3);}
 
 callout_arg : expr
+				{$$ = new Call_out_arg($1);}
 			| STRING
+				{$$ = new Call_out_arg(string($1));}
 
 location : ID
+				{$$ = new Location(string($1));}
 		 | ID '[' expr ']'
+		 		{$$ = new Location(string($1),$3);}
+
+exprs : expr
+			{$$ = new Exprs(); $$->Push_back($1);}
+	  | exprs ',' expr
+	  		{$$->Push_back($3);}
 
 expr : location
-	 | method_call
+			{$$ = $1;}
+	 | function_call
+	 		{$$ = $1;}
 	 | lit
+	 		{$$ = $1;}
 	 | expr PLUS expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr MINUS expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr MUL expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr DIV expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr MOD expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr LT expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr GT expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr LE expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr GE expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr EE expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr NE expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr AND expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | expr OR expr
+	 		{$$ = new Binary_expr($1,string($2),$3);}
 	 | MINUS expr
+	 		{$$ = new Unary_expr(string($1),$2);}
 	 | EXCL expr
+	 		{$$ = new Unary_expr(string($1),$2);}
 	 | '(' expr ')'
+	 		{$$ = new Bracket_expr($2);}
 
 
 lit : INT_LIT
+		{$$ = new Integer_literal($1);}
 	| CHAR
+		{$$ = new Char_literal(string($1));}
 	| BOOL_LIT
+		{$$ = new Bool_literal(string($1));}
 
-
-/*int_lit : NUMBER {$$ = new Int_lit($1);}
-		| HEX_NUMBER {$$ = new Int_lit($1);}
-*/
-
-
-/*bool_lit : TRUE
-		 | FALSE*/
 
 
 

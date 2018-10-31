@@ -12,11 +12,37 @@ class Method_declarations;
 class Method_declaration;
 class Method_args_declarations;
 class Method_args_declaration;
+class Statement;
 class Block;
 class Field_method_declarations;
 class Field_method_declaration;
 class Var_method_declarations;
 class Var_method_declaration;
+class Statements;
+class Assignment;
+class Function_call;
+class If_else;
+class Forr;
+class Return;
+class Break;
+class Continue;
+class Assign_op;
+class Method_call;
+class Call_out;
+class Call_out_args;
+class Call_out_arg;
+class Location;
+class Exprs;
+class Expr;
+class Literal;
+class Binary_expr;
+class Unary_expr;
+class Bracket_expr;
+class Integer_literal;
+class Char_literal;
+class Bool_literal;
+
+
 
 enum variableType{
     Array = 1, Normal = 2
@@ -39,6 +65,30 @@ class Visitor
     virtual int visit(Field_method_declaration *vis){}
     // virtual int visit(Var_method_declarations *vis){}
     virtual int visit(Var_method_declaration *vis){}
+    virtual int visit(Statements *vis){}
+    virtual int visit(Statement *vis){}
+    virtual int visit(Assignment *vis){}
+    virtual int visit(Function_call *vis){}
+    virtual int visit(If_else *vis){}
+    virtual int visit(Forr *vis){}
+    virtual int visit(Return *vis){}
+    virtual int visit(Break *vis){}
+    virtual int visit(Continue *vis){}
+    virtual int visit(Assign_op *vis){}
+    virtual int visit(Method_call *vis){}
+    virtual int visit(Call_out *vis){}
+    virtual int visit(Call_out_args *vis){}
+    virtual int visit(Call_out_arg *vis){}
+    virtual int visit(Location *vis){}
+    virtual int visit(Exprs *vis){}
+    virtual int visit(Expr *vis){}
+    virtual int visit(Literal *vis){}
+    virtual int visit(Binary_expr *vis){}
+    virtual int visit(Unary_expr *vis){}
+    virtual int visit(Bracket_expr *vis){}
+    virtual int visit(Integer_literal *vis){}
+    virtual int visit(Char_literal *vis){}
+    virtual int visit(Bool_literal *vis){}
 		// virtual int visit(statlist *sta){}
 		// virtual int visit(stat *sta){}
 		// virtual int visit(bl *sta){}
@@ -174,11 +224,27 @@ class Method_args_declaration:public AST
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
-class Block:public AST
+class Statement:public AST
+{
+  public:
+    Statement() = default;
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Expr:public AST
+{
+  public:
+    Expr() = default;
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+
+class Block:public Statement
 {
   public:
     class Field_method_declarations *field_method_declarations;
-    Block(Field_method_declarations *);
+    class Statements *statements;
+    Block(Field_method_declarations *, Statements *);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -218,7 +284,211 @@ class Var_method_declaration:public AST
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
+class Statements:public AST
+{
+  public:
+    vector<Statement *> statement_list;
+    Statements() = default;
+    void Push_back(Statement *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
 
+// class Statement:public AST
+// {
+//   public:
+//     Statement() = default;
+//   virtual int accept(Visitor *v){v->visit(this);}
+// };
+
+class Assignment:public Statement
+{
+  public:
+    Location *location;
+    Assign_op *assign_op;
+    Expr *expr;
+    Assignment(Location *, Assign_op *, Expr *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Function_call:public Statement, public Expr
+{
+  public:
+    Function_call() = default;
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class If_else:public Statement
+{
+  public:
+    Expr *expr;
+    Block *block1;
+    Block *block2;
+    If_else(Expr *, Block *, Block *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Forr:public Statement
+{
+  public:
+    string var_name;
+    Expr *expr1;
+    Expr *expr2;
+    Block *block;
+    Forr(string, Expr *, Expr *,Block *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Return:public Statement
+{
+  public:
+    Expr *expr;
+    Return(Expr *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Break:public Statement
+{
+  public:
+    Break() = default;
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Continue:public Statement
+{
+  public:
+    Continue() = default;
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Assign_op:public AST
+{
+  public:
+    string operation;
+    Assign_op(string);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Method_call:public Function_call
+{
+  public:
+    string name;
+    Exprs *exprs;
+    Method_call(string, Exprs *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Call_out:public Function_call
+{
+  public:
+    string print_var;
+    Call_out_args *call_out_args;
+    Call_out(string, Call_out_args *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Call_out_args:public AST
+{
+  public:
+    vector<Call_out_arg *> Call_out_arg_declaration_list;
+    Call_out_args() = default;
+    void Push_back(Call_out_arg *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Call_out_arg:public AST
+{
+  public:
+    Expr *expr;
+    string Literal;
+    Call_out_arg(class Expr *);
+    Call_out_arg(string); 
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Location:public Expr
+{
+  public:
+    string name;
+    Expr *expr;
+    explicit Location(string);
+    explicit Location(string, Expr *);  
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Exprs:public AST
+{
+  public:
+    vector<Expr *> Expr_declaration_list;
+    Exprs() = default;
+    void Push_back(Expr *);  
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+// class Expr:public AST
+// {
+//   public:
+//     Expr() = default;
+//   virtual int accept(Visitor *v){v->visit(this);}
+// };
+
+
+class Literal:public Expr
+{
+  public:
+    Literal() = default;
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Binary_expr:public Expr
+{
+  public:
+    Expr *expr1;
+    Expr *expr2;
+    string operation;
+    Binary_expr(Expr *, string, Expr *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Unary_expr:public Expr
+{
+  public:
+    Expr *expr;
+    string operation;
+    Unary_expr(string, Expr *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Bracket_expr:public Expr
+{
+  public:
+    Expr *expr;
+    Bracket_expr(Expr *);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Integer_literal:public Literal
+{
+  public:
+    int var;
+    Integer_literal(int);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Char_literal:public Literal
+{
+  public:
+    string var;
+    Char_literal(string);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
+
+class Bool_literal:public Literal
+{
+  public:
+    string var;
+    Bool_literal(string);
+  virtual int accept(Visitor *v){v->visit(this);}
+};
 // class Type:public AST
 // {
 // 	public:
@@ -323,6 +593,8 @@ public:
       cout<<"Enterend Block\n";
       if(vis->field_method_declarations!=NULL)
         vis->field_method_declarations->accept(this);
+      if(vis->statements!=NULL)
+        vis->statements->accept(this);
     }
 
     int visit(Field_method_declarations *vis)
@@ -350,4 +622,182 @@ public:
       cout<<"Entered Printing Variables\n";
       cout<<vis->name<<"\n";
     }
+
+    //statements
+    int visit(Statements *vis)
+    {
+      cout<<"Entered Statements\n";
+      for(int i=0;i<vis->statement_list.size();i++)
+      {
+        vis->statement_list[i]->accept(this);
+      }
+    }
+
+    //statement
+    int visit(Statement *vis)
+    {
+      cout<<"Entered Statement\n";
+    }
+
+    //Assignment
+    int visit(Assignment *vis)
+    {
+      cout<<"Entered Assignment\n";
+      vis->location->accept(this);
+      vis->assign_op->accept(this);
+      vis->expr->accept(this);
+    }
+
+    //Function_call
+    int visit(Function_call *vis)
+    {
+
+    }
+
+    //IFelse
+    int visit(If_else *vis)
+    {
+      cout<<"Entered Visit\n";
+      vis->expr->accept(this);
+      vis->block1->accept(this);
+      if(vis->block2!=NULL)
+        vis->block2->accept(this);
+    }
+
+    //For
+    int visit(Forr *vis)
+    {
+      cout<<"Forr with variable "<<vis->var_name<<endl;
+      vis->expr1->accept(this);
+      vis->expr2->accept(this);
+      vis->block->accept(this);
+    }
+
+    //Return
+    int visit(Return *vis)
+    {
+      cout<<"Entered Return\n";
+      if(vis->expr!=NULL)
+        vis->expr->accept(this);
+    }
+
+    //Break
+    int visit(Break *vis)
+    {
+      cout<<"Break Found\n";
+    }
+
+    //Continue
+    int visit(Continue *vis)
+    {
+      cout<<"Found Continue\n";
+    }
+
+    //Assign_op
+    int visit(Assign_op *vis)
+    {
+      cout<<"Assign_op "<<vis->operation<<endl;
+    }
+
+    //Method_call
+    int visit(Method_call *vis)
+    {
+      cout<<"Method call name "<<vis->name<<endl;
+      vis->exprs->accept(this);
+    }
+
+    //Call_out
+    int visit(Call_out *vis)
+    {
+      cout<<"Call_out Print "<<vis->print_var<<endl;
+      vis->call_out_args->accept(this);
+    }
+
+    //Call_out_args
+    int visit(Call_out_args *vis)
+    {
+      cout<<"Call out Arguments\n";
+      for(int i=0;i<vis->Call_out_arg_declaration_list.size();i++)
+      {
+        vis->Call_out_arg_declaration_list[i]->accept(this);
+      }
+    }
+
+    //call_out_arg
+    int visit(Call_out_arg *vis)
+    {
+
+    }
+
+    //Location
+    int visit(Location *vis)
+    {
+      cout<<"Location variable name "<<vis->name<<endl;
+      if(vis->expr!=NULL)
+        vis->expr->accept(this);
+    }
+
+    //Exprs
+    int visit(Exprs *vis)
+    {
+      cout<<"EXprs\n";
+      for(int i=0;i<vis->Expr_declaration_list.size();i++)
+      {
+        vis->Expr_declaration_list[i]->accept(this);
+      }
+    }
+
+    //Expr
+    int visit(Expr *vis)
+    {
+      cout<<"Expr\n";
+    }
+
+    //Literal
+    int visit(Literal *vis)
+    {
+      cout<<"Literal \n";
+    }
+
+    //Binary_expr
+    int visit(Binary_expr *vis)
+    {
+      cout<<"Binary Expr operation "<<vis->operation<<endl;
+      vis->expr1->accept(this);
+      vis->expr2->accept(this);
+    }
+
+    //Unary expr
+    int visit(Unary_expr *vis)
+    {
+      cout<<"Unary_expr operation "<<vis->operation<<endl;
+      vis->expr->accept(this);
+    }
+
+    //Bravket_expr
+    int visit(Bracket_expr *vis)
+    {
+      cout<<"Bravket_expr\n";
+      vis->expr->accept(this);
+    }
+
+    //Integer_literal
+    int visit(Integer_literal *vis)
+    {
+      cout<<"Integer literal "<<vis->var<<endl;
+    }
+
+    //Char_literal
+    int visit(Char_literal *vis)
+    {
+      cout<<"Char literal "<<vis->var<<endl;
+    }
+
+    //Bool_literal
+    int visit(Bool_literal *vis)
+    {
+      cout<<"Bool literal "<<vis->var<<endl;
+    }
+
+
 };
