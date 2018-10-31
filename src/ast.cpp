@@ -176,6 +176,12 @@ Assignment::Assignment(Location *location, Assign_op *assign_op, Expr *expr)
 If_else::If_else(Expr *expr, Block *block1, Block *block2)
 {
   this->expr = expr;
+  cout<<expr->lit_type<<endl;
+  if(expr->lit_type!=1)
+  {
+    cout<<"If condition should be boolen"<<endl;
+    exit(0);
+  }
   this->block1 = block1;
   this->block2 = block2;
 }
@@ -212,6 +218,8 @@ Method_call::Method_call(string name, Exprs *exprs)
 {
   this->name = name;
   this->exprs = exprs;
+  this->expr_type = 1;
+  this->lit_type = 0;
 }
 
 //Call_out
@@ -242,6 +250,8 @@ Call_out_arg::Call_out_arg(string Literal)
 Location::Location(string name)
 {
   this->name = name;
+  this->lit_type = 0;
+  this->expr_type = 0; 
 }
 Location::Location(string name, Expr *expr)
 {
@@ -266,6 +276,30 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
   this->expr1 = expr1;
   this->operation = operation;
   this->expr2 = expr2;
+  this->expr_type = 3;
+  cout<<"Binary "<<expr1->lit_type<<" "<<expr2->lit_type<<" "<<operation<<endl;
+  string a =operation;
+  if(((a=="+" or a=="-") or (a=="*" or (a=="/" or a=="%"))))
+  {
+    if(!(expr1->lit_type==0 && expr2->lit_type==0))
+    {
+      cout<<"Arithemetic expression should have type ints on two sides\n";
+      exit(0);
+    }
+    cout<<"Arithemetic Expression "<<operation<<endl;
+    this->lit_type = 0;
+  }
+  else if(((a=="<" or a==">") or (a=="<=" or a==">=")))
+  {
+    if(!(expr1->lit_type==0 && expr2->lit_type==0))
+    {
+      cout<<"Relation expression should have type ints on two sides\n";
+      exit(0);
+    }
+    cout<<"Relation operation\n";
+    this->lit_type = 1;
+  }
+  cout<<"Binary expression "<<this->lit_type<<endl;
 }
 
 //Unary_expr
@@ -273,30 +307,58 @@ Unary_expr::Unary_expr(string operation, Expr *expr)
 {
   this->expr = expr;
   this->operation = operation;
+  this->expr_type = 4;
+  // cout<<"unary expression "<<operation<<endl;
+  if(operation== "!" and expr->lit_type!=1)
+  {
+    cout<<"Unary expression variable should be boolean for !\n";
+    exit(0);
+  }
+  else if(operation=="!")
+    this->lit_type = 1;
+  if(operation== "-" and expr->lit_type!=0)
+  {
+    cout<<"Unary expression variable should be int for -\n";
+    exit(0);
+  }
+  else if(operation=="-")
+    this->lit_type = 0;
+  // cout<<"unary_lit_type "<<this->lit_type<<endl;
 }
 
 //Bracket_expr
 Bracket_expr::Bracket_expr(Expr *expr)
 {
   this->expr = expr;
+  this->expr_type = 5;
+  this->lit_type = expr->lit_type;
 }
 
 //Integer_literal
 Integer_literal::Integer_literal(int var)
 {
   this->var = var;
+  this->lit_type = 0;
+  this->expr_type = 2;
+  cout<<"Int_literal "<<this->lit_type<<endl;
 }
 
 //Char_literal
 Char_literal::Char_literal(string var)
 {
   this->var = var;
+  this->lit_type = 2;
+  this->expr_type = 2;
+  cout<<"Bool_literal "<<this->lit_type<<endl;
 }
 
 //Bool_literal
 Bool_literal::Bool_literal(string var)
 {
   this->var = var;
+  this->lit_type = 1;
+  this->expr_type = 2;
+  cout<<"Bool_literal "<<this->lit_type<<endl;
 }
 
 

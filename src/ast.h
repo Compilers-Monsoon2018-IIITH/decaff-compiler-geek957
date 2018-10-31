@@ -234,6 +234,16 @@ class Statement:public AST
 class Expr:public AST
 {
   public:
+    // location - 0
+    // Function_call - 1
+    // literal - 2
+    // Binary_expr - 3
+    // unary_expr - 4
+    // bracket - 5 
+    int expr_type=1;
+    // int - 0 
+    // boolean - 1 
+    int lit_type=1;
     Expr() = default;
   virtual int accept(Visitor *v){v->visit(this);}
 };
@@ -436,6 +446,10 @@ class Literal:public Expr
 {
   public:
     Literal() = default;
+    // int literal_type;
+    // this->lit_type = this->literal_type;
+    // cout << "hello" << endl;
+    // this->expr_type = 2;
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -462,6 +476,7 @@ class Bracket_expr:public Expr
 {
   public:
     Expr *expr;
+    // $this->expr_type = 5;
     Bracket_expr(Expr *);
   virtual int accept(Visitor *v){v->visit(this);}
 };
@@ -471,6 +486,7 @@ class Integer_literal:public Literal
   public:
     int var;
     Integer_literal(int);
+    // this->lit_type = 0;
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -479,6 +495,7 @@ class Char_literal:public Literal
   public:
     string var;
     Char_literal(string);
+    // this->lit_type = 2;
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -487,6 +504,7 @@ class Bool_literal:public Literal
   public:
     string var;
     Bool_literal(string);
+    // this->lit_type = 1;
   virtual int accept(Visitor *v){v->visit(this);}
 };
 // class Type:public AST
