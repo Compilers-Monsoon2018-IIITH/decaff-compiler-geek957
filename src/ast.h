@@ -1,6 +1,67 @@
 #include<bits/stdc++.h>
+#include <map>
+#include <string>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/IRBuilder.h>
+#include "llvm/IR/Module.h"
+#include <string>
+#include <stack>
 using namespace std;
+using namespace llvm;
 
+
+class loopInfo {
+    BasicBlock *afterBB, *checkBB;
+    llvm::Value *condition;
+    std::string loopVariable;
+    PHINode *phiVariable;
+public:
+    loopInfo(BasicBlock *afterBlock, BasicBlock *checkBlock, Value *cond, std::string var, PHINode *phiVar) {
+        afterBB = afterBlock;
+        checkBB = checkBlock;
+        condition = cond;
+        loopVariable = var;
+        phiVariable = phiVar;
+    }
+
+    BasicBlock *getAfterBlock() { return afterBB; }
+
+    BasicBlock *getCheckBlock() { return checkBB; }
+
+    llvm::Value *getCondition() { return condition; }
+
+    PHINode *getPHINode() { return phiVariable; }
+
+    std::string getLoopVariable() { return loopVariable; }
+};
+
+class Constructs {
+public:
+    LLVMContext Context;
+    
+
+    Module *TheModule;
+    
+
+    IRBuilder<> *Builder;
+    
+
+    std::map<std::string, llvm::AllocaInst *> NamedValues;
+    
+
+    llvm::legacy::FunctionPassManager *TheFPM;
+    
+    int errors;
+
+    std::stack<loopInfo *> *loops;
+
+    Constructs();
+
+    AllocaInst *CreateEntryBlockAlloca(Function *TheFunction, std::string VarName, std::string type);
+
+};
 
 class AST;
 class Program;
@@ -126,6 +187,9 @@ class Program:public AST
   		class Field_declarations *fields;
       class Method_declarations *methods;
   		Program(class Field_declarations *, class Method_declarations *);
+      virtual Value *generateCode();
+      void generateCodeDump();
+      Constructs *compilerConstructs;
 
  //  	Program(class fieldDeclarations *fields, class methodDeclarations *methods) {
 	//     this->methods = methods;
@@ -148,6 +212,7 @@ class Field_declarations:public AST
 		vector<class Field_declaration *> declaration_list;
 		Field_declarations() = default;
 		void Push_back(class Field_declaration *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
 	virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -157,16 +222,17 @@ class Field_declaration:public AST
 	public:
 		string dataType;
 		// class Type *typ;
-		vector<Var_declaration *> var_list;
+		vector<class Var_declaration *> var_list;
 		// class Var_declarations *vars;
 		Field_declaration(string, Var_declarations *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
 	virtual int accept(Visitor *v){v->visit(this);}
 };
 
 class Var_declarations:public AST
 {
 	public:
-		vector<Var_declaration *> var_declaration_list;
+		vector<class Var_declaration *> var_declaration_list;
 		Var_declarations() = default;
 		void Push_back(Var_declaration *);
 		vector<Var_declaration *> getVarsList();
@@ -183,6 +249,7 @@ class Var_declaration:public AST
   	explicit Var_declaration(string);
   	bool isArray() { return (declType == variableType::Array); }
   	unsigned int getLength() {return length;}
+    string getname(){return name;}
 	virtual int accept(Visitor *v){v->visit(this);}
 };	
 
@@ -192,6 +259,7 @@ class Method_declarations:public AST
     vector<class Method_declaration *> method_declaration_list;
     Method_declarations() = default;
     void Push_back(class Method_declaration *);
+    virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -203,6 +271,7 @@ class Method_declaration:public AST
     class Method_args_declarations *method_args_declarations;
     class Block *block;
     Method_declaration(string, string, Method_args_declarations *, Block *);
+    virtual Function *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -212,6 +281,7 @@ class Method_args_declarations:public AST
     vector<class Method_args_declaration *> method_args_declaration_list;
     Method_args_declarations() = default;
     void Push_back(class Method_args_declaration *);
+    vector<class Method_args_declaration *> getArgList();
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -221,6 +291,8 @@ class Method_args_declaration:public AST
     string arg_type;
     string name;
     Method_args_declaration(string,string);
+    string getType(){return arg_type;}
+    string getName(){return name;}
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -255,6 +327,7 @@ class Block:public Statement
     class Field_method_declarations *field_method_declarations;
     class Statements *statements;
     Block(Field_method_declarations *, Statements *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -264,6 +337,7 @@ class Field_method_declarations:public AST
     vector<class Field_method_declaration *> declaration_list;
     Field_method_declarations() = default;
     void Push_back(class Field_method_declaration *);
+  virtual Value *generateCode(std::map<std::string, llvm::AllocaInst *> &, Constructs *);
   virtual int accept(Visitor *v){v->visit(this);} 
 };
 
@@ -273,6 +347,7 @@ class Field_method_declaration:public AST
     string dataType;
     vector<Var_method_declaration *> var_list;
     Field_method_declaration(string, Var_method_declarations *);
+  virtual Value *generateCode(std::map<std::string, llvm::AllocaInst *> &, Constructs *);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -291,6 +366,7 @@ class Var_method_declaration:public AST
   public:   
     string name;
     Var_method_declaration(string);
+    string getName(){return name;}
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
