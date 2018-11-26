@@ -20,6 +20,22 @@
 using namespace llvm;
 using namespace std;
 
+string replace_newline(string str) {
+    size_t index = 0;
+    string search = "\\n";
+    while (true) {
+        /* Locate the substring to replace. */
+        index = str.find(search, index);
+        if (index == std::string::npos) break;
+        /* Make the replacement. */
+        str.erase(index, search.length());
+        str.insert(index, "\n");
+        /* Advance index forward so the next iteration doesn't pick it up as well. */
+        index += 1;
+    }
+    return str;
+}
+
 Constructs::Constructs() {
     this->Builder = new IRBuilder<>(Context);
     this->loops = new std::stack<loopInfo*>();
@@ -375,7 +391,7 @@ Value* Block::generateCode(Constructs *compilerConstructs)
   }
   if(statements!=NULL)
   {
-      // V=statements->generateCode(compilerConstructs);
+      V=statements->generateCode(compilerConstructs);
       for (auto it = Old_vals.begin(); it != Old_vals.end(); it++) {
           compilerConstructs->NamedValues[it->first] = Old_vals[it->first];
       }
@@ -459,8 +475,45 @@ void Statements::Push_back(Statement * statement)
   this->statement_list.push_back(statement);
 }
 
-// Statement
+bool Statements::has_return() {
+    for (int i = 0; i < statement_list.size(); i++) {
+        if (statement_list[i]->has_return()) {
+            return true;
+        }
+    }
+    return false;
+}
 
+bool Statements::has_continue() {
+    for (int i = 0; i < statement_list.size(); i++) {
+        if (statement_list[i]->has_continue()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Statements::has_break() {
+    for (int i = 0; i < statement_list.size(); i++) {
+        if (statement_list[i]->has_break()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+Value *Statements::generateCode(Constructs* compilerConstructs)
+{
+  Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
+  for (auto &stmt : statement_list) {
+        v = stmt->generateCode(compilerConstructs);
+    }
+    return v;
+}
+
+// Statement
+// ???????????
 
 // Assignment
 Assignment::Assignment(Location *location, Assign_op *assign_op, Expr *expr)
@@ -468,6 +521,42 @@ Assignment::Assignment(Location *location, Assign_op *assign_op, Expr *expr)
   this->location = location;
   this->assign_op = assign_op;
   this->expr = expr;
+}
+
+Value* Assignment::generateCode(Constructs *compilerConstructs)
+{
+
+  Value *cur = compilerConstructs->NamedValues[location->name];
+
+    if (cur == nullptr) {
+        cur = compilerConstructs->TheModule->getGlobalVariable(location->name);
+    }
+    if (cur == nullptr) {
+        compilerConstructs->errors++;
+        // return reportError("Unknown Variable Name " + location->name);
+    }
+
+    Value *val = expr->generateCode(compilerConstructs);
+    if (expr->expr_type==0) {
+        val = compilerConstructs->Builder->CreateLoad(val);
+    }
+
+    Value *lhs = location->generateCode(compilerConstructs);
+    cur = compilerConstructs->Builder->CreateLoad(lhs);
+
+
+    if (val == nullptr) {
+        compilerConstructs->errors++;
+        // return reportError("Error in right hand side of the Assignment");
+    }
+    if (assign_op->operation == "+=") {
+        val = compilerConstructs->Builder->CreateAdd(cur, val, "addEqualToTmp");
+    } else if (assign_op->operation == "-=") {
+        val = compilerConstructs->Builder->CreateSub(cur, val, "subEqualToTmp");
+    }
+    return compilerConstructs->Builder->CreateStore(val, lhs);
+
+
 }
 
 
@@ -488,6 +577,111 @@ If_else::If_else(Expr *expr, Block *block1, Block *block2)
   this->block2 = block2;
 }
 
+bool If_else::has_return() {
+    bool status = false;
+    if (block1 != nullptr) {
+        status = status | block1->has_return();
+    }
+    if (block2 != nullptr) {
+        status = status | block2->has_return();
+    }
+    return status;
+}
+
+
+bool If_else::has_continue() {
+    bool status = false;
+    if (block1 != nullptr) {
+        status = status | block1->has_continue();
+    }
+    if (block2 != nullptr) {
+        status = status | block2->has_continue();
+    }
+    return status;
+}
+
+
+bool If_else::has_break() {
+    bool status = false;
+    if (block1 != nullptr) {
+        status = status | block1->has_break();
+    }
+    if (block2 != nullptr) {
+        status = status | block2->has_break();
+    }
+    return status;
+}
+
+Value* If_else::generateCode(Constructs *compilerConstructs)
+{
+  Value *cond = expr->generateCode(compilerConstructs);
+    if (cond == nullptr) {
+        // compilerConstructs->errors++;
+        // return reportError("Invalid Expression in the IF");
+    }
+
+    /* Create blocks for if, else and next part of the code */
+    Function *TheFunction = compilerConstructs->Builder->GetInsertBlock()->getParent();
+    BasicBlock *ifBlock = BasicBlock::Create(compilerConstructs->Context, "if", TheFunction);
+    BasicBlock *elseBlock = BasicBlock::Create(compilerConstructs->Context, "else");
+    BasicBlock *nextBlock = BasicBlock::Create(compilerConstructs->Context, "ifcont");
+    BasicBlock *otherBlock = elseBlock;
+    bool ret_if = block1->has_return(), ret_else = false;
+    bool break_if=block1->has_break();
+    bool continue_if=block1->has_continue();
+    /// Create a conditional break and an insert point
+    if (block2 == nullptr) {
+        otherBlock = nextBlock;
+    }
+
+    compilerConstructs->Builder->CreateCondBr(cond, ifBlock, otherBlock);
+    compilerConstructs->Builder->SetInsertPoint(ifBlock);
+
+    /// generate the code for if block
+    Value *if_val = block1->generateCode(compilerConstructs);
+    if (if_val == nullptr) {
+        return nullptr;
+    }
+
+    /// Create a break for next part of the code after else block
+
+    if (!ret_if && !break_if && !continue_if) {
+        compilerConstructs->Builder->CreateBr(nextBlock);
+    }
+
+    ifBlock = compilerConstructs->Builder->GetInsertBlock();
+    /// Create insert point for else block
+
+    Value *else_val = nullptr;
+
+    if (block2 != nullptr) {
+        /// Generate code for else block
+        TheFunction->getBasicBlockList().push_back(elseBlock);
+        compilerConstructs->Builder->SetInsertPoint(elseBlock);
+        else_val = block2->generateCode(compilerConstructs);
+        if (else_val == nullptr) {
+            return nullptr;
+        }
+        ret_else = block2->has_return();
+        if (!ret_else)
+            compilerConstructs->Builder->CreateBr(nextBlock);
+    }
+    // Create a break for the next part of the code
+    TheFunction->getBasicBlockList().push_back(nextBlock);
+    compilerConstructs->Builder->SetInsertPoint(nextBlock);
+    if (ret_else && ret_if) {
+        // if both if and else block have a return statement create a dummy instruction to hold a next block
+        Type *retType = compilerConstructs->Builder->GetInsertBlock()->getParent()->getReturnType();
+        if (retType == Type::getVoidTy(compilerConstructs->Context))
+            compilerConstructs->Builder->CreateRetVoid();
+        else {
+            compilerConstructs->Builder->CreateRet(ConstantInt::get(compilerConstructs->Context, APInt(32, 0)));
+        }
+    }
+    Value *V = ConstantInt::get(compilerConstructs->Context, APInt(32, 0));
+    return V;
+}
+
 
 //For
 Forr::Forr(string var_name, Expr *expr1, Expr *expr2, Block *block)
@@ -498,6 +692,66 @@ Forr::Forr(string var_name, Expr *expr1, Expr *expr2, Block *block)
   this->block = block;
 }
 
+Value* Forr::generateCode(Constructs *compilerConstructs)
+{
+  Value *start = expr1->generateCode(compilerConstructs);
+    if (start == nullptr) {
+        return nullptr;
+    }
+    if (expr1->expr_type==0) {
+        start = compilerConstructs->Builder->CreateLoad(start);
+    }
+    /* Get the parent method of this for loop */
+    Function *TheFunction = compilerConstructs->Builder->GetInsertBlock()->getParent();
+    /* Create memory for the loop variable */
+    llvm::AllocaInst *Alloca = compilerConstructs->CreateEntryBlockAlloca(TheFunction, var_name, string("int"));
+    compilerConstructs->Builder->CreateStore(start, Alloca);
+
+    Value *step_val = ConstantInt::get(compilerConstructs->Context, APInt(32, 1));
+    BasicBlock *pre_header_basic_block = compilerConstructs->Builder->GetInsertBlock();
+    BasicBlock *loop_body = BasicBlock::Create(compilerConstructs->Context, "loop", TheFunction);
+    BasicBlock *afterBB = BasicBlock::Create(compilerConstructs->Context, "afterloop", TheFunction);
+    compilerConstructs->Builder->CreateBr(loop_body);
+    compilerConstructs->Builder->SetInsertPoint(loop_body);
+
+    PHINode *Variable = compilerConstructs->Builder->CreatePHI(Type::getInt32Ty(compilerConstructs->Context), 2, var_name);
+    Variable->addIncoming(start, pre_header_basic_block);
+    /* Store the old value */
+    Value *cond = expr2->generateCode(compilerConstructs);
+    if (cond == nullptr) {
+        compilerConstructs->errors++;
+        // return reportError("Invalid Condition");
+    }
+
+    // Check if condition is a location
+    if (expr2->expr_type==0) {
+        cond = compilerConstructs->Builder->CreateLoad(cond);
+    }
+    compilerConstructs->loops->push(new loopInfo(afterBB, loop_body, cond, var_name, Variable));
+    llvm::AllocaInst *OldVal = compilerConstructs->NamedValues[var_name];
+    compilerConstructs->NamedValues[var_name] = Alloca;
+    /* Generate the code for the body */
+    if (block->generateCode(compilerConstructs) == nullptr) {
+        return nullptr;
+    }
+
+    Value *cur = compilerConstructs->Builder->CreateLoad(Alloca, var_name);
+    Value *next_val = compilerConstructs->Builder->CreateAdd(cur, step_val, "NextVal");
+    compilerConstructs->Builder->CreateStore(next_val, Alloca);
+    cond = compilerConstructs->Builder->CreateICmpSLT(next_val, cond, "loopcondition");
+    BasicBlock *loopEndBlock = compilerConstructs->Builder->GetInsertBlock();
+    compilerConstructs->Builder->CreateCondBr(cond, loop_body, afterBB);
+    compilerConstructs->Builder->SetInsertPoint(afterBB);
+    Variable->addIncoming(next_val, loopEndBlock);
+
+    if (OldVal) {
+        compilerConstructs->NamedValues[var_name] = OldVal;
+    } else {
+        compilerConstructs->NamedValues.erase(var_name);
+    }
+    llvm::Value *V = ConstantInt::get(compilerConstructs->Context, APInt(32, 1));
+    return V;
+}
 
 //Return
 Return::Return(Expr *expr)
@@ -505,9 +759,51 @@ Return::Return(Expr *expr)
   this->expr = expr;
 }
 
+Value *Return::generateCode(Constructs *compilerConstructs)
+{
+  llvm::Value *V = nullptr;
+    if (expr != nullptr) {
+        /// Generate IR for expression to be returned
+        V = expr->generateCode(compilerConstructs);
+        if (expr->expr_type==0) {
+            /// Generate IR for returning it
+            V = compilerConstructs->Builder->CreateLoad(V);
+        }
+        compilerConstructs->Builder->CreateRet(V);
+        return V;
+    }
+    compilerConstructs->Builder->CreateRetVoid();
+    return V;
+}
+
 //Break
 
+Value *Break::generateCode(Constructs *compilerConstructs) 
+{
+  llvm::Value *V = llvm::ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
+    loopInfo *currentLoop = compilerConstructs->loops->top();
+    compilerConstructs->Builder->CreateBr(currentLoop->getAfterBlock());
+    return V;
+}
+
 //Continue
+Value *Continue::generateCode(Constructs *compilerConstructs) 
+{
+  llvm::Value *V = llvm::ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
+    loopInfo *currentLoop = compilerConstructs->loops->top();
+    Expr *condition = nullptr;
+    string var = currentLoop->getLoopVariable();
+    AllocaInst *Alloca = compilerConstructs->NamedValues[var];
+    Value *step_val = ConstantInt::get(compilerConstructs->Context, APInt(32, 1));
+    Value *cur = compilerConstructs->Builder->CreateLoad(Alloca, var);
+    Value *next_val = compilerConstructs->Builder->CreateAdd(cur, step_val, "NextVal");
+    compilerConstructs->Builder->CreateStore(next_val, Alloca);
+    llvm::Value *cond = compilerConstructs->Builder->CreateICmpULE(next_val, currentLoop->getCondition(),
+                                                                   "loopcondition");
+    BasicBlock *loopEndBlock = compilerConstructs->Builder->GetInsertBlock();
+    compilerConstructs->Builder->CreateCondBr(cond, currentLoop->getCheckBlock(), currentLoop->getAfterBlock());
+    return V;
+}
 
 //Assign_op
 Assign_op::Assign_op(string operation)
@@ -524,11 +820,79 @@ Method_call::Method_call(string name, Exprs *exprs)
   this->lit_type = 0;
 }
 
+Value* Method_call::generateCode(Constructs *compilerConstructs)
+{
+  Function *calle = compilerConstructs->TheModule->getFunction(name);
+    if (calle == nullptr) {
+        compilerConstructs->errors++;
+        // return reportError("Unknown Function name" + name);
+    }
+    /* Check if required number of parameters are passed */
+    vector<class Expr*> args_list;
+    if( exprs!=NULL)
+       args_list = exprs->Expr_declaration_list;
+    if (calle->arg_size() != args_list.size()) {
+        compilerConstructs->errors++;
+        // return reportError("Incorrect Number of Parameters Passed");
+    }
+    /// Generate the code for the arguments
+    vector<Value *> Args;
+    for (auto &arg : args_list) {
+        Value *argVal = arg->generateCode(compilerConstructs);
+        if (arg->expr_type == 0) {
+            argVal = compilerConstructs->Builder->CreateLoad(argVal);
+        }
+        if (argVal == nullptr) {
+            compilerConstructs->errors++;
+            // reportError("Argument is not valid");
+            return nullptr;
+        }
+        Args.push_back(argVal);
+    }
+    // Reverse the order of arguments as the parser parses in the reverse order
+    // std::reverse(Args.begin(), Args.end());
+    // Generate the code for the function call
+    Value *v = compilerConstructs->Builder->CreateCall(calle, Args);
+    return v;
+}
+
 //Call_out
 Call_out::Call_out(string print_var, Call_out_args *call_out_args)
 {
-  this->print_var = print_var;
+  this->print_var=print_var.substr(1, print_var.length() - 2);
+  this->print_var=replace_newline(this->print_var);
+  // this->print_var = print_var;
   this->call_out_args = call_out_args;
+}
+
+Value* Call_out::generateCode(Constructs *compilerConstructs)
+{
+  std::vector<llvm::Type *> argTypes;
+    std::vector<Value *> Args;
+    std::vector<class Call_out_arg *> args_list;
+    if(call_out_args!=NULL) 
+      args_list= call_out_args->Call_out_arg_declaration_list;
+    /**
+     * Iterate through the arguments and generate the code required for each one of them
+     */
+    for (auto &i : args_list) {
+        Value *tmp = i->generateCode(compilerConstructs);
+        if (tmp == nullptr) {
+            return nullptr;
+        }
+        Args.push_back(tmp);
+        argTypes.push_back(tmp->getType());
+    }
+    /* Generate the code for the function execution */
+    llvm::ArrayRef<llvm::Type *> argsRef(argTypes);
+    llvm::ArrayRef<llvm::Value *> funcargs(Args);
+    llvm::FunctionType *FType = FunctionType::get(Type::getInt32Ty(compilerConstructs->Context), argsRef, false);
+    Constant *func = compilerConstructs->TheModule->getOrInsertFunction(print_var, FType);
+    if (!func) {
+        // return reportError("Error in inbuilt function. Unknown Function name " + print_var);
+    }
+    Value *v = compilerConstructs->Builder->CreateCall(func, funcargs);
+    return v;
 }
 
 // Call_out_args
@@ -545,7 +909,30 @@ Call_out_arg::Call_out_arg(class Expr *expr)
 }
 Call_out_arg::Call_out_arg(string Literal)
 {
-  this->Literal = Literal; 
+  this->Literal=Literal.substr(1, Literal.length() - 2);
+  this->Literal=replace_newline(this->Literal);
+  // this->Literal = Literal; 
+}
+
+Value *Call_out_arg::generateCode(Constructs *compilerConstructs)
+{
+  if (expr == nullptr && Literal=="") {
+        compilerConstructs->errors++;
+        // return reportError("Invalid Callout Arg");
+    }
+    Value *v;
+    if(expr != nullptr)
+    {
+      v = expr->generateCode(compilerConstructs);
+      if (expr->expr_type==0) {
+          v = compilerConstructs->Builder->CreateLoad(v);
+      }
+    }
+    else
+    {
+      v = compilerConstructs->Builder->CreateGlobalStringPtr(Literal);
+    }
+    return v;
 }
 
 //Location
@@ -554,11 +941,52 @@ Location::Location(string name)
   this->name = name;
   this->lit_type = 0;
   this->expr_type = 0; 
+  this->location_type=var_type::normal;
 }
 Location::Location(string name, Expr *expr)
 {
   this->name = name;
   this->expr = expr;
+  this->expr_type=0;
+  this->location_type=var_type::array;
+}
+
+Value *Location::generateCode(Constructs *compilerConstructs)
+{
+  Value *V = compilerConstructs->NamedValues[name];
+  if (V == nullptr) 
+  {
+        V = compilerConstructs->TheModule->getNamedGlobal(name);
+    }
+    if (V == nullptr) 
+    {
+        compilerConstructs->errors++;
+        // return reportError("Unknown Variable name " + name);
+    }
+    /* If location is variable return the code generated */
+    if (this->location_type == var_type::normal) {
+        return V;
+    }
+    /* Check if we have an index for array */
+    if (this->expr == nullptr) {
+        // return reportError("Invalid array index");
+    }
+    /* Generate the code for index of the array */
+    Value *index = expr->generateCode(compilerConstructs);
+    if (expr->expr_type == 0) {
+        index = compilerConstructs->Builder->CreateLoad(index);
+    }
+    /* If index is invalid then report error */
+    if (index == nullptr) {
+        // return reportError("Invalid array index");
+    }
+    /* Generate the code required for accessing the array at the given index */
+    vector<Value *> array_index;
+    array_index.push_back(compilerConstructs->Builder->getInt32(0));
+    array_index.push_back(index);
+    V = compilerConstructs->Builder->CreateGEP(V, array_index, name + "_Index");
+    return V;
+
 }
 
 
@@ -604,6 +1032,51 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
   cout<<"Binary expression "<<this->lit_type<<endl;
 }
 
+Value *Binary_expr::generateCode(Constructs *compilerConstructs)
+{
+  Value *left = expr1->generateCode(compilerConstructs);
+    Value *right = expr2->generateCode(compilerConstructs);
+    if (expr1->expr_type == 0) {
+        left = compilerConstructs->Builder->CreateLoad(left);
+    }
+    if (expr2->expr_type == 0) {
+        right = compilerConstructs->Builder->CreateLoad(right);
+    }
+    string opr=operation;
+    if (left == 0) {
+        compilerConstructs->errors++;
+        // return reportError("Error in left operand of " + operation);
+    } else if (right == 0) {
+        compilerConstructs->errors++;
+        // return reportError("Error in right operand of " + operation);
+    }
+    Value *v = nullptr;
+    if (operation == "+") {
+        v = compilerConstructs->Builder->CreateAdd(left, right, "addtmp");
+    } else if (operation == "-") {
+        v = compilerConstructs->Builder->CreateSub(left, right, "subtmp");
+    } else if (operation == "*") {
+        v = compilerConstructs->Builder->CreateMul(left, right, "multmp");
+    } else if (operation == "/") {
+        v = compilerConstructs->Builder->CreateSDiv(left, right, "divtmp");
+    } else if (operation == "%") {
+        v = compilerConstructs->Builder->CreateSRem(left, right, "modtmp");
+    } else if (operation == "<") {
+        v = compilerConstructs->Builder->CreateICmpSLT(left, right, "ltcomparetmp");
+    } else if (operation == ">") {
+        v = compilerConstructs->Builder->CreateICmpSGT(left, right, "gtcomparetmp");
+    } else if (operation == "<=") {
+        v = compilerConstructs->Builder->CreateICmpSLE(left, right, "lecomparetmp");
+    } else if (operation == ">=") {
+        v = compilerConstructs->Builder->CreateICmpSGE(left, right, "gecomparetmp");
+    } else if (operation == "==") {
+        v = compilerConstructs->Builder->CreateICmpEQ(left, right, "equalcomparetmp");
+    } else if (operation == "!=") {
+        v = compilerConstructs->Builder->CreateICmpNE(left, right, "notequalcomparetmp");
+    }
+    return v;
+}
+
 //Unary_expr
 Unary_expr::Unary_expr(string operation, Expr *expr)
 {
@@ -628,12 +1101,31 @@ Unary_expr::Unary_expr(string operation, Expr *expr)
   // cout<<"unary_lit_type "<<this->lit_type<<endl;
 }
 
+Value *Unary_expr::generateCode(Constructs *compilerConstructs)
+{
+  Value *v = expr->generateCode(compilerConstructs);
+    if (expr->expr_type==0) {
+        v = compilerConstructs->Builder->CreateLoad(v);
+    }
+    /// Generate the code for operation based on the operator
+    if (operation == "-") {
+        return compilerConstructs->Builder->CreateNeg(v, "negtmp");
+    } else if (operation == "!") {
+        return compilerConstructs->Builder->CreateNot(v, "nottmp");
+    }
+}
+
 //Bracket_expr
 Bracket_expr::Bracket_expr(Expr *expr)
 {
   this->expr = expr;
   this->expr_type = 5;
   this->lit_type = expr->lit_type;
+}
+
+Value *Bracket_expr::generateCode(Constructs *compilerConstructs)
+{
+  return expr->generateCode(compilerConstructs);
 }
 
 //Integer_literal
@@ -643,6 +1135,12 @@ Integer_literal::Integer_literal(int var)
   this->lit_type = 0;
   this->expr_type = 2;
   cout<<"Int_literal "<<this->lit_type<<endl;
+}
+
+Value* Integer_literal::generateCode(Constructs *compilerConstructs)
+{
+  Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, static_cast<uint64_t>(var)));
+    return v;
 }
 
 //Char_literal
@@ -661,6 +1159,19 @@ Bool_literal::Bool_literal(string var)
   this->lit_type = 1;
   this->expr_type = 2;
   cout<<"Bool_literal "<<this->lit_type<<endl;
+}
+
+Value* Bool_literal::generateCode(Constructs *compilerConstructs)
+{
+  bool val;
+    if (var == "true") val = true;
+    else if (var == "false") val = false;
+    else {
+        compilerConstructs->errors++;
+        // return reportError("Invalid Boolean Literal " + var);
+    }
+    Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(1, val));
+    return v;
 }
 
 

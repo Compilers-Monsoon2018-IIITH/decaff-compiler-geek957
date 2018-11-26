@@ -11,6 +11,9 @@
 using namespace std;
 using namespace llvm;
 
+enum var_type{
+  normal=0,array=1
+};
 
 class loopInfo {
     BasicBlock *afterBB, *checkBB;
@@ -300,6 +303,10 @@ class Statement:public AST
 {
   public:
     Statement() = default;
+    virtual bool has_return() { return false; }
+    virtual bool has_break() { return false; }
+    virtual bool has_continue() { return false; }
+    virtual Value *generateCode(Constructs *compilerConstructs){};
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -317,6 +324,7 @@ class Expr:public AST
     // boolean - 1 
     int lit_type=1;
     Expr() = default;
+  virtual Value *generateCode(Constructs *compilerConstructs) {};
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -376,6 +384,10 @@ class Statements:public AST
     vector<Statement *> statement_list;
     Statements() = default;
     void Push_back(Statement *);
+    bool has_return();
+    bool has_break();
+    bool has_continue();
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -393,6 +405,7 @@ class Assignment:public Statement
     Assign_op *assign_op;
     Expr *expr;
     Assignment(Location *, Assign_op *, Expr *);
+    virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -400,6 +413,7 @@ class Function_call:public Statement, public Expr
 {
   public:
     Function_call() = default;
+  virtual Value *generateCode(Constructs *compilerConstructs){};
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -410,6 +424,10 @@ class If_else:public Statement
     Block *block1;
     Block *block2;
     If_else(Expr *, Block *, Block *);
+    bool has_return();
+    bool has_break();
+    bool has_continue();
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -421,6 +439,7 @@ class Forr:public Statement
     Expr *expr2;
     Block *block;
     Forr(string, Expr *, Expr *,Block *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -429,6 +448,8 @@ class Return:public Statement
   public:
     Expr *expr;
     Return(Expr *);
+    virtual bool has_return(){return true;}
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -436,6 +457,8 @@ class Break:public Statement
 {
   public:
     Break() = default;
+    virtual bool has_break(){return true;}
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -443,6 +466,8 @@ class Continue:public Statement
 {
   public:
     Continue() = default;
+    virtual bool has_continue(){return true;}
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -460,6 +485,7 @@ class Method_call:public Function_call
     string name;
     Exprs *exprs;
     Method_call(string, Exprs *);
+  virtual Value *generateCode(Constructs *compilerConstructs);  
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -469,6 +495,7 @@ class Call_out:public Function_call
     string print_var;
     Call_out_args *call_out_args;
     Call_out(string, Call_out_args *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -487,7 +514,8 @@ class Call_out_arg:public AST
     Expr *expr;
     string Literal;
     Call_out_arg(class Expr *);
-    Call_out_arg(string); 
+    Call_out_arg(string);
+  virtual Value *generateCode(Constructs *compilerConstructs); 
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -496,8 +524,10 @@ class Location:public Expr
   public:
     string name;
     Expr *expr;
+    var_type location_type;
     explicit Location(string);
     explicit Location(string, Expr *);  
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -526,6 +556,7 @@ class Literal:public Expr
     // this->lit_type = this->literal_type;
     // cout << "hello" << endl;
     // this->expr_type = 2;
+  virtual Value *generateCode(Constructs *compilerConstructs){};
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -536,6 +567,7 @@ class Binary_expr:public Expr
     Expr *expr2;
     string operation;
     Binary_expr(Expr *, string, Expr *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -545,6 +577,7 @@ class Unary_expr:public Expr
     Expr *expr;
     string operation;
     Unary_expr(string, Expr *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -554,6 +587,7 @@ class Bracket_expr:public Expr
     Expr *expr;
     // $this->expr_type = 5;
     Bracket_expr(Expr *);
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -563,6 +597,7 @@ class Integer_literal:public Literal
     int var;
     Integer_literal(int);
     // this->lit_type = 0;
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 
@@ -581,6 +616,7 @@ class Bool_literal:public Literal
     string var;
     Bool_literal(string);
     // this->lit_type = 1;
+  virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
 // class Type:public AST
