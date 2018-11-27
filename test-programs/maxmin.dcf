@@ -1,6 +1,5 @@
 class Program
 {
-// max size of array 100
 	int v1[100];
 	int mini;
 
@@ -8,7 +7,7 @@ class Program
 
 	void main()
 	{
-		callout("printf", "Enter the size of vectors: ");
+		int n;
 		mini = 0;
 		maxi = 100;	
 		n = 10;

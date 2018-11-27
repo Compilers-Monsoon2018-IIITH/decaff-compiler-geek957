@@ -5,9 +5,10 @@ class Program
 
 	void main()
 	{
+		int n;
+		n = 10;
 		callout("printf", "Enter the size of vectors: ");
 		
-		n=10;
 
 		callout("printf", "Enter the elements in the first vector: \n");
 
