@@ -335,6 +335,9 @@ class Block:public Statement
     class Field_method_declarations *field_method_declarations;
     class Statements *statements;
     Block(Field_method_declarations *, Statements *);
+    bool has_return() ;
+    bool has_break() ;
+    bool has_continue() ;
   virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };

@@ -20,6 +20,11 @@
 using namespace llvm;
 using namespace std;
 
+llvm::Value *reportError(string error_str) {
+    cerr << "ERROR FOUND----->"<<error_str << endl;
+    return nullptr;
+}
+
 string replace_newline(string str) {
     size_t index = 0;
     string search = "\\n";
@@ -132,11 +137,24 @@ Value *Program::generateCode()
   return v;
 }
 
+raw_ostream &file_write() 
+{
+    FILE *fp=fopen("outfile","w");
+    static raw_fd_ostream S(fileno(fp), true);
+    return S;
+}
 void Program::generateCodeDump()
 {
   cerr << "Generating LLVM IR Code\n";
-    this->compilerConstructs->TheModule->print(llvm::outs(), nullptr);
+    
+    this->compilerConstructs->TheModule->print(file_write(), nullptr);
 }
+
+// void Program::generateCodeDump()
+// {
+//   cerr << "Generating LLVM IR Code\n";
+//     this->compilerConstructs->TheModule->print(llvm::outs(), nullptr);
+// }
 
 void Field_declarations::Push_back(Field_declaration *field_declaration)
 {
@@ -239,6 +257,7 @@ void Method_declarations::Push_back(Method_declaration *method_declaration)
 
 Value *Method_declarations::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Method declarations\n";
   Value *V = ConstantInt::get(compilerConstructs->Context, APInt(32, 0));
   for(auto &i:method_declaration_list)
   {
@@ -260,6 +279,7 @@ Method_declaration::Method_declaration(string method_type, string name, Method_a
 
 Function* Method_declaration::generateCode(Constructs *compilerConstructs)
 {
+    cout<<"Entered Method declaration\n";
     std::vector<std::string> argNames;
     std::vector<std::string> argTypes;
     std::vector<class Method_args_declaration *> args;
@@ -327,9 +347,10 @@ Function* Method_declaration::generateCode(Constructs *compilerConstructs)
     Value *RetVal = block->generateCode(compilerConstructs);
     if (RetVal) {
         /* make this the return value */
-        if (method_type != "void")
-            compilerConstructs->Builder->CreateRet(RetVal);
-        else
+        // if (method_type != "void")
+        //     compilerConstructs->Builder->CreateRet(RetVal);
+        // else
+        if (method_type == "void")
             compilerConstructs->Builder->CreateRetVoid();
         /// Iterate through each basic block in this function and remove any dead code
         // for (auto &basicBlock : *F) {
@@ -378,8 +399,22 @@ Block::Block(Field_method_declarations *field_method_declarations, Statements *s
   this->statements = statements;
 }
 
+bool Block::has_return()
+{
+  return statements->has_return();
+}
+bool Block::has_break()
+{
+  return statements->has_break();
+}
+bool Block::has_continue()
+{
+  return statements->has_continue();
+}
+
 Value* Block::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Block\n";
   Value *V;
     std::map<std::string, llvm::AllocaInst *> Old_vals;
     if(field_method_declarations!=NULL)
@@ -410,6 +445,7 @@ void Field_method_declarations::Push_back(Field_method_declaration *field_method
 
 Value* Field_method_declarations::generateCode(map<string, AllocaInst *> &oldValues, Constructs *compilerConstructs)
 {
+  cout<<"Field_method_declarations\n";
   Value *v = ConstantInt::get(compilerConstructs->Context, APInt(32, 1));
     for (auto &decl : declaration_list) {
         /// Generate the code for each declaration
@@ -431,6 +467,7 @@ Field_method_declaration::Field_method_declaration(string dataType, Var_method_d
 
 Value* Field_method_declaration::generateCode(map<string, llvm::AllocaInst *> &Old_vals, Constructs *compilerConstructs)
 {
+  cout<<"Field_method_declaration\n";
   llvm::Function *TheFunction = compilerConstructs->Builder->GetInsertBlock()->getParent();
     for (const auto &var : var_list) {
         string varName = var->getName();
@@ -505,6 +542,7 @@ bool Statements::has_break() {
 
 Value *Statements::generateCode(Constructs* compilerConstructs)
 {
+  cout<<"Entered Statements\n";
   Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
   for (auto &stmt : statement_list) {
         v = stmt->generateCode(compilerConstructs);
@@ -525,7 +563,7 @@ Assignment::Assignment(Location *location, Assign_op *assign_op, Expr *expr)
 
 Value* Assignment::generateCode(Constructs *compilerConstructs)
 {
-
+  cout<<"Entered Assignment\n";
   Value *cur = compilerConstructs->NamedValues[location->name];
 
     if (cur == nullptr) {
@@ -533,7 +571,7 @@ Value* Assignment::generateCode(Constructs *compilerConstructs)
     }
     if (cur == nullptr) {
         compilerConstructs->errors++;
-        // return reportError("Unknown Variable Name " + location->name);
+        return reportError("Unknown Variable Name " + location->name);
     }
 
     Value *val = expr->generateCode(compilerConstructs);
@@ -547,7 +585,7 @@ Value* Assignment::generateCode(Constructs *compilerConstructs)
 
     if (val == nullptr) {
         compilerConstructs->errors++;
-        // return reportError("Error in right hand side of the Assignment");
+        return reportError("Error in right hand side of the Assignment");
     }
     if (assign_op->operation == "+=") {
         val = compilerConstructs->Builder->CreateAdd(cur, val, "addEqualToTmp");
@@ -571,7 +609,7 @@ If_else::If_else(Expr *expr, Block *block1, Block *block2)
   if(expr->lit_type!=1)
   {
     cout<<"If condition should be boolen"<<endl;
-    exit(0);
+    // exit(0);
   }
   this->block1 = block1;
   this->block2 = block2;
@@ -614,10 +652,11 @@ bool If_else::has_break() {
 
 Value* If_else::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered If_else\n";
   Value *cond = expr->generateCode(compilerConstructs);
     if (cond == nullptr) {
         // compilerConstructs->errors++;
-        // return reportError("Invalid Expression in the IF");
+        return reportError("Invalid Expression in the IF");
     }
 
     /* Create blocks for if, else and next part of the code */
@@ -629,11 +668,15 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
     bool ret_if = block1->has_return(), ret_else = false;
     bool break_if=block1->has_break();
     bool continue_if=block1->has_continue();
+
+    cout<<ret_if<<" rea "<<break_if<<" rea "<<continue_if<<" rea "<<endl;
     /// Create a conditional break and an insert point
     if (block2 == nullptr) {
+        cout<<"Block2 is null pointer"<<endl;
         otherBlock = nextBlock;
     }
 
+    cout<<"hello1"<<endl;
     compilerConstructs->Builder->CreateCondBr(cond, ifBlock, otherBlock);
     compilerConstructs->Builder->SetInsertPoint(ifBlock);
 
@@ -642,16 +685,20 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
     if (if_val == nullptr) {
         return nullptr;
     }
+    cout<<"hello2"<<endl;
 
     /// Create a break for next part of the code after else block
 
+    bool flag = 0;
     if (!ret_if && !break_if && !continue_if) {
         compilerConstructs->Builder->CreateBr(nextBlock);
+        flag = 1;
     }
 
     ifBlock = compilerConstructs->Builder->GetInsertBlock();
     /// Create insert point for else block
 
+    cout<<"hello3"<<endl;
     Value *else_val = nullptr;
 
     if (block2 != nullptr) {
@@ -663,9 +710,13 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
             return nullptr;
         }
         ret_else = block2->has_return();
+        // bool break_else=block2->has_break();
+        // bool continue_else=block2->has_continue();
         if (!ret_else)
             compilerConstructs->Builder->CreateBr(nextBlock);
     }
+    cout<<"hello4"<<endl;
+
     // Create a break for the next part of the code
     TheFunction->getBasicBlockList().push_back(nextBlock);
     compilerConstructs->Builder->SetInsertPoint(nextBlock);
@@ -678,6 +729,7 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
             compilerConstructs->Builder->CreateRet(ConstantInt::get(compilerConstructs->Context, APInt(32, 0)));
         }
     }
+    cout<<"hello5"<<endl;
     Value *V = ConstantInt::get(compilerConstructs->Context, APInt(32, 0));
     return V;
 }
@@ -694,6 +746,7 @@ Forr::Forr(string var_name, Expr *expr1, Expr *expr2, Block *block)
 
 Value* Forr::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered For\n";
   Value *start = expr1->generateCode(compilerConstructs);
     if (start == nullptr) {
         return nullptr;
@@ -720,7 +773,7 @@ Value* Forr::generateCode(Constructs *compilerConstructs)
     Value *cond = expr2->generateCode(compilerConstructs);
     if (cond == nullptr) {
         compilerConstructs->errors++;
-        // return reportError("Invalid Condition");
+        return reportError("Invalid Condition");
     }
 
     // Check if condition is a location
@@ -761,6 +814,7 @@ Return::Return(Expr *expr)
 
 Value *Return::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Return\n";
   llvm::Value *V = nullptr;
     if (expr != nullptr) {
         /// Generate IR for expression to be returned
@@ -780,6 +834,7 @@ Value *Return::generateCode(Constructs *compilerConstructs)
 
 Value *Break::generateCode(Constructs *compilerConstructs) 
 {
+  cout<<"Entered Break\n";
   llvm::Value *V = llvm::ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
     loopInfo *currentLoop = compilerConstructs->loops->top();
     compilerConstructs->Builder->CreateBr(currentLoop->getAfterBlock());
@@ -789,6 +844,7 @@ Value *Break::generateCode(Constructs *compilerConstructs)
 //Continue
 Value *Continue::generateCode(Constructs *compilerConstructs) 
 {
+  cout<<"Entered Continue\n";
   llvm::Value *V = llvm::ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
     loopInfo *currentLoop = compilerConstructs->loops->top();
     Expr *condition = nullptr;
@@ -822,10 +878,11 @@ Method_call::Method_call(string name, Exprs *exprs)
 
 Value* Method_call::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Method_call\n";
   Function *calle = compilerConstructs->TheModule->getFunction(name);
     if (calle == nullptr) {
         compilerConstructs->errors++;
-        // return reportError("Unknown Function name" + name);
+        return reportError("Unknown Function name" + name);
     }
     /* Check if required number of parameters are passed */
     vector<class Expr*> args_list;
@@ -833,7 +890,7 @@ Value* Method_call::generateCode(Constructs *compilerConstructs)
        args_list = exprs->Expr_declaration_list;
     if (calle->arg_size() != args_list.size()) {
         compilerConstructs->errors++;
-        // return reportError("Incorrect Number of Parameters Passed");
+        return reportError("Incorrect Number of Parameters Passed");
     }
     /// Generate the code for the arguments
     vector<Value *> Args;
@@ -867,6 +924,7 @@ Call_out::Call_out(string print_var, Call_out_args *call_out_args)
 
 Value* Call_out::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Call_out "<<print_var<<endl;
   std::vector<llvm::Type *> argTypes;
     std::vector<Value *> Args;
     std::vector<class Call_out_arg *> args_list;
@@ -889,7 +947,7 @@ Value* Call_out::generateCode(Constructs *compilerConstructs)
     llvm::FunctionType *FType = FunctionType::get(Type::getInt32Ty(compilerConstructs->Context), argsRef, false);
     Constant *func = compilerConstructs->TheModule->getOrInsertFunction(print_var, FType);
     if (!func) {
-        // return reportError("Error in inbuilt function. Unknown Function name " + print_var);
+        return reportError("Error in inbuilt function. Unknown Function name " + print_var);
     }
     Value *v = compilerConstructs->Builder->CreateCall(func, funcargs);
     return v;
@@ -911,18 +969,23 @@ Call_out_arg::Call_out_arg(string Literal)
 {
   this->Literal=Literal.substr(1, Literal.length() - 2);
   this->Literal=replace_newline(this->Literal);
+  this->expr = NULL;
   // this->Literal = Literal; 
 }
 
 Value *Call_out_arg::generateCode(Constructs *compilerConstructs)
 {
-  if (expr == nullptr && Literal=="") {
+    cout<<"Entered Call_out_arg "<<Literal<<endl;
+    if (expr == nullptr && Literal=="") {
         compilerConstructs->errors++;
-        // return reportError("Invalid Callout Arg");
+        return reportError("Invalid Callout Arg");
     }
     Value *v;
+    cout<<"HELLO1\n";
     if(expr != nullptr)
     {
+      cout<<"NOT NULL EXPR\n";
+      cout<<expr->expr_type<<endl;
       v = expr->generateCode(compilerConstructs);
       if (expr->expr_type==0) {
           v = compilerConstructs->Builder->CreateLoad(v);
@@ -932,6 +995,7 @@ Value *Call_out_arg::generateCode(Constructs *compilerConstructs)
     {
       v = compilerConstructs->Builder->CreateGlobalStringPtr(Literal);
     }
+    cout<<"Exited from Call_out_arg\n";
     return v;
 }
 
@@ -953,6 +1017,7 @@ Location::Location(string name, Expr *expr)
 
 Value *Location::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Location "<<name<<endl;
   Value *V = compilerConstructs->NamedValues[name];
   if (V == nullptr) 
   {
@@ -961,7 +1026,7 @@ Value *Location::generateCode(Constructs *compilerConstructs)
     if (V == nullptr) 
     {
         compilerConstructs->errors++;
-        // return reportError("Unknown Variable name " + name);
+        return reportError("Unknown Variable name " + name);
     }
     /* If location is variable return the code generated */
     if (this->location_type == var_type::normal) {
@@ -969,7 +1034,7 @@ Value *Location::generateCode(Constructs *compilerConstructs)
     }
     /* Check if we have an index for array */
     if (this->expr == nullptr) {
-        // return reportError("Invalid array index");
+        return reportError("Invalid array index");
     }
     /* Generate the code for index of the array */
     Value *index = expr->generateCode(compilerConstructs);
@@ -978,7 +1043,7 @@ Value *Location::generateCode(Constructs *compilerConstructs)
     }
     /* If index is invalid then report error */
     if (index == nullptr) {
-        // return reportError("Invalid array index");
+        return reportError("Invalid array index");
     }
     /* Generate the code required for accessing the array at the given index */
     vector<Value *> array_index;
@@ -1008,13 +1073,13 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
   this->expr2 = expr2;
   this->expr_type = 3;
   cout<<"Binary "<<expr1->lit_type<<" "<<expr2->lit_type<<" "<<operation<<endl;
-  string a =operation;
+  string a = operation;
   if(((a=="+" or a=="-") or (a=="*" or (a=="/" or a=="%"))))
   {
     if(!(expr1->lit_type==0 && expr2->lit_type==0))
     {
       cout<<"Arithemetic expression should have type ints on two sides\n";
-      exit(0);
+      // exit(0);
     }
     cout<<"Arithemetic Expression "<<operation<<endl;
     this->lit_type = 0;
@@ -1024,7 +1089,7 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
     if(!(expr1->lit_type==0 && expr2->lit_type==0))
     {
       cout<<"Relation expression should have type ints on two sides\n";
-      exit(0);
+      // exit(0);
     }
     cout<<"Relation operation\n";
     this->lit_type = 1;
@@ -1034,6 +1099,7 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
 
 Value *Binary_expr::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Binay_expr "<<operation<<endl;
   Value *left = expr1->generateCode(compilerConstructs);
     Value *right = expr2->generateCode(compilerConstructs);
     if (expr1->expr_type == 0) {
@@ -1045,10 +1111,10 @@ Value *Binary_expr::generateCode(Constructs *compilerConstructs)
     string opr=operation;
     if (left == 0) {
         compilerConstructs->errors++;
-        // return reportError("Error in left operand of " + operation);
+        return reportError("Error in left operand of " + operation);
     } else if (right == 0) {
         compilerConstructs->errors++;
-        // return reportError("Error in right operand of " + operation);
+        return reportError("Error in right operand of " + operation);
     }
     Value *v = nullptr;
     if (operation == "+") {
@@ -1087,14 +1153,14 @@ Unary_expr::Unary_expr(string operation, Expr *expr)
   if(operation== "!" and expr->lit_type!=1)
   {
     cout<<"Unary expression variable should be boolean for !\n";
-    exit(0);
+    // exit(0);
   }
   else if(operation=="!")
     this->lit_type = 1;
   if(operation== "-" and expr->lit_type!=0)
   {
     cout<<"Unary expression variable should be int for -\n";
-    exit(0);
+    // exit(0);
   }
   else if(operation=="-")
     this->lit_type = 0;
@@ -1103,6 +1169,7 @@ Unary_expr::Unary_expr(string operation, Expr *expr)
 
 Value *Unary_expr::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Unary_expr\n";
   Value *v = expr->generateCode(compilerConstructs);
     if (expr->expr_type==0) {
         v = compilerConstructs->Builder->CreateLoad(v);
@@ -1125,6 +1192,7 @@ Bracket_expr::Bracket_expr(Expr *expr)
 
 Value *Bracket_expr::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Bracket_expr\n";
   return expr->generateCode(compilerConstructs);
 }
 
@@ -1139,6 +1207,7 @@ Integer_literal::Integer_literal(int var)
 
 Value* Integer_literal::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Integer_lit\n";
   Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, static_cast<uint64_t>(var)));
     return v;
 }
@@ -1163,12 +1232,13 @@ Bool_literal::Bool_literal(string var)
 
 Value* Bool_literal::generateCode(Constructs *compilerConstructs)
 {
+  cout<<"Entered Bool_lit\n";
   bool val;
     if (var == "true") val = true;
     else if (var == "false") val = false;
     else {
         compilerConstructs->errors++;
-        // return reportError("Invalid Boolean Literal " + var);
+        return reportError("Invalid Boolean Literal " + var);
     }
     Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(1, val));
     return v;

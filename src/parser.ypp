@@ -365,9 +365,9 @@ main(int argc, char **argv)
 	cout<<"Done dfs :)"<<endl;
 	if(start)
 	{
-		cout<<"Started generating LLVM-IR"<<endl;
+		cout<<"------------------------Started generating LLVM-IR---------------------------"<<endl;
 		start->generateCode();
-		cout<<"Started generating LLVM-IR"<<endl;
+		//cout<<"Started generating LLVM-IR"<<endl;
 		start->generateCodeDump();
 	}
 	printf("Parsing Over\n");
