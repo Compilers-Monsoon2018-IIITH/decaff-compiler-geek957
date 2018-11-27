@@ -17,7 +17,7 @@
 - test-programs
   - 17 dcf programs, for some of them are outputs are in sample outputs section 
   
-## Running
+## How to run
 ```
 - bison -d parser.ypp
 - bison -d parser.ypp
@@ -25,7 +25,6 @@
 - ./parser inputfile
 - lli-6.0 outfile
 ```
-## Description
 ## Sample output
 ### arraysum.dcf
 ```
@@ -44,6 +43,7 @@ LLVM-IR generated
 rallaakhil@rallaakhil:~/compilers/project/phase-2$ lli-6.0 outfile
 The sum of given vector is : 45
 ```
+## Description
 
 ## Output for some more programs
 ### bubble.dcf
