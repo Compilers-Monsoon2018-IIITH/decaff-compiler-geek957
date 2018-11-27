@@ -44,6 +44,7 @@ rallaakhil@rallaakhil:~/compilers/project/phase-2$ lli-6.0 outfile
 The sum of given vector is : 45
 ```
 ## Description
+The grammar writtem does not have any shift/reduce or reduce/reduce conflicts. The main code is in parser.ypp file. In this main function we first do yyparse(). In yyparse() the creation of AST, checking semantic errors. After that, dfs is done whose code is written in ast.h. Dfs is done using the visitor design pattern. Then after, LLVM-IR code is generated using generate code methods written for various classes. The LLVM-IR output is written in outputfile. We can lli interpreter to run the outputfile. Run-time checking is done, as we haven't done interpreter code evaluation.  
 
 ## Output for some more programs
 ### bubble.dcf
