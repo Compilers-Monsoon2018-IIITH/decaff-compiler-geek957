@@ -1186,8 +1186,8 @@ Location::Location(string name, Expr *expr)
     {
       if(expr->expr_type!=2)
       {
-        cout<<"should be int literal\n";
-        exit(0);
+        // cout<<"should be int literal\n";
+        // exit(0);
       }
       else if(expr->getVal() >= vars[name].second and expr->getVal() < 0)
       {

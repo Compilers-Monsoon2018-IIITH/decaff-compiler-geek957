@@ -7,7 +7,7 @@ class Program
 
 	void main()
 	{
-		int n;
+		int n,i;
 		mini = 0;
 		maxi = 100;	
 		n = 10;

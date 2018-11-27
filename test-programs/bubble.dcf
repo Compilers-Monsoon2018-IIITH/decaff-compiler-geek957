@@ -5,7 +5,7 @@ class Program
 
 	void main()
 	{
-		int n;
+		int n,j,i;
 		n = 10;
 		callout("printf", "Enter the size of vectors: ");
 		

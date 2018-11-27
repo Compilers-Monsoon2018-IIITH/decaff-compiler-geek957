@@ -7,7 +7,7 @@ class Program
 
 	void main()
 	{
-		int n;
+		int n,i;
 		callout("printf", "Enter the size of vectors: ");
 		max1 = 0;
 		max2 = 0;
