@@ -15,17 +15,26 @@
     - All methods are written here.
     - generate code functions were used for creating LLVM-IR
 - test-programs
-  - arraysum.dcf : prints sum of all the elements in an array.
-  - bubble.dcf : sorts array using mbubble sort algorithm.
-  - maxmin.dcf : prints max and min element of an array.
-  - netmax.dcf : prints the second largest element in an array.
-  - sumn.dcf : print sum of first n elements.
+  - 17 dcf programs, for some of them are outputs are in sample outputs section 
   
+## Running
+```
+- bison -d parser.ypp
+- bison -d parser.ypp
+- g++ -std=c++11 -o parser parser.tab.cpp lex.yy.c ast.cpp -ll -g -ldl -lfl `llvm-config-6.0 --cppflags --libs --libfiles core --ldflags --system-libs`
+- ./parser inputfile
+- lli-6.0 outfile
+```
 ## Description
-## Output for Test Programs
+## Sample output
 ### arraysum.dcf
 ```
-rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser arraysum.dcf 
+rallaakhil@rallaakhil:~/compilers/project/phase-2$ make
+bison -d parser.ypp
+flex scanner.l
+# g++ -std=c++11 -o parser parser.tab.cpp lex.yy.c ast.cpp -ll
+g++ -std=c++11 -o parser parser.tab.cpp lex.yy.c ast.cpp -ll -g -ldl -lfl `llvm-config-6.0 --cppflags --libs --libfiles core --ldflags --system-libs`
+rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser test-programs/arraysum.dcf 
 Starting
 Parsing Over
 Started dfs
@@ -35,9 +44,11 @@ LLVM-IR generated
 rallaakhil@rallaakhil:~/compilers/project/phase-2$ lli-6.0 outfile
 The sum of given vector is : 45
 ```
+
+## Output for some more programs
 ### bubble.dcf
 ```
-rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser bubble.dcf 
+rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser test-programs/bubble.dcf 
 Starting
 Parsing Over
 Started dfs
@@ -50,7 +61,7 @@ The final sorted order  is :
 ```
 ### quick_sort.dcf
 ```
-rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser quick_sort.dcf 
+rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser test-programs/quick_sort.dcf 
 Starting
 Parsing Over
 Started dfs
@@ -62,7 +73,7 @@ sorted array : 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
 ```
 ### mergesort.dcf
 ```
-rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser merge_sort.dcf 
+rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser test-programs/merge_sort.dcf 
 Starting
 Parsing Over
 Started dfs
@@ -74,7 +85,7 @@ sorted array : 1 2 3 4 5 6 7 8 9 10
 ```
 ### gcd.dcf
 ```
-rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser gcd.dcf 
+rallaakhil@rallaakhil:~/compilers/project/phase-2$ ./parser test-programs/gcd.dcf 
 Starting
 Parsing Over
 Started dfs
