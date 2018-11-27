@@ -11,6 +11,9 @@
 using namespace std;
 using namespace llvm;
 
+extern map<string, pair<int, int> > vars;
+extern map<string, bool> vars_check;
+
 enum var_type{
   normal=0,array=1
 };
@@ -323,7 +326,9 @@ class Expr:public AST
     // int - 0 
     // boolean - 1 
     int lit_type=1;
+    int temp = 0;
     Expr() = default;
+  virtual int getVal(){return temp;}
   virtual Value *generateCode(Constructs *compilerConstructs) {};
   virtual int accept(Visitor *v){v->visit(this);}
 };
@@ -600,6 +605,7 @@ class Integer_literal:public Literal
     int var;
     Integer_literal(int);
     // this->lit_type = 0;
+  virtual int getVal(){return var;}
   virtual Value *generateCode(Constructs *compilerConstructs);
   virtual int accept(Visitor *v){v->visit(this);}
 };
@@ -867,7 +873,10 @@ public:
     {
       cout<<"Location variable name "<<vis->name<<endl;
       if(vis->expr!=NULL)
+      {
+        cout<<"vis->expression is not null\n";
         vis->expr->accept(this);
+      }
     }
 
     //Exprs

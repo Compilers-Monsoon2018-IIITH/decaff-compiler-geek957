@@ -20,6 +20,9 @@
 using namespace llvm;
 using namespace std;
 
+map<string, pair<int, int> > vars;
+map<string, bool> vars_check;
+
 llvm::Value *reportError(string error_str) {
     cerr << "ERROR FOUND----->"<<error_str << endl;
     return nullptr;
@@ -180,6 +183,43 @@ Field_declaration::Field_declaration(string dataType, Var_declarations *var_decl
 {
   this->dataType = dataType;
   this->var_list = var_declarations->getVarsList();
+  for(class Var_declaration *var: this->var_list)
+  {
+    cout<<"AAAAAAAAAA addition "<<var->name<<" "<<dataType<<endl;
+    if(vars_check.find(var->name) != vars_check.end())
+    {
+      cout<<"Variable"+ var->name+" is already declared\n";
+      exit(0);
+    }
+    else
+    {
+      vars_check[var->name] = 1;
+      if(dataType=="boolean" and var->declType==2)
+      {
+        vars[var->name] = make_pair(2,0);
+      }
+      else if(dataType=="boolean" and var->declType==1)
+      {
+        vars[var->name] = make_pair(4,var->length);
+      }
+      else if(dataType=="int" and var->declType==2)
+      {
+       vars[var->name] = make_pair(1,0); 
+      }
+      else if(dataType=="int" and var->declType==1)
+      {
+       vars[var->name] = make_pair(3,var->length); 
+      }
+    }
+  }
+  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second << endl;
+  }
+  for (auto it = vars.begin(); it != vars.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  }
 }
 
 Value *Field_declaration::generateCode(Constructs *compilerConstructs)
@@ -275,6 +315,25 @@ Method_declaration::Method_declaration(string method_type, string name, Method_a
   this->name = name;
   this->method_args_declarations = method_args_declarations;
   this->block = block;
+  if(method_args_declarations!=NULL)
+  {
+    for(class Method_args_declaration *var: method_args_declarations->method_args_declaration_list)
+    {
+      cout<<"AAAAAAAAAA deletion "<<var->name<<" "<<var->arg_type<<endl;
+      vars_check.erase(var->name);
+      vars.erase(var->name);
+      // vars_check[var->name] = 0;
+    }
+  }
+  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second << endl;
+  }
+  for (auto it = vars.begin(); it != vars.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  }
+
 }
 
 Function* Method_declaration::generateCode(Constructs *compilerConstructs)
@@ -389,6 +448,32 @@ Method_args_declaration::Method_args_declaration(string arg_type, string name)
 {
   this->arg_type = arg_type;
   this->name = name;
+  cout<<"AAAAAAAAAA addition "<<name<<" "<<arg_type<<endl;
+  if(vars_check.find(name) != vars_check.end())
+  {
+    cout<<"Variable"+ name+" is already declared\n";
+    exit(0);
+  }
+  else
+  {
+    vars_check[name] = 1;
+    if(arg_type=="boolean")
+    {
+      vars[name] = make_pair(2,0);
+    }
+    else if(arg_type=="int")
+    {
+     vars[name] = make_pair(1,0); 
+    }
+  }
+  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second << endl;
+  }
+  for (auto it = vars.begin(); it != vars.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  }
 }
 
 
@@ -397,6 +482,26 @@ Block::Block(Field_method_declarations *field_method_declarations, Statements *s
 {
   this->field_method_declarations = field_method_declarations;
   this->statements = statements;
+  if(field_method_declarations!=NULL)
+  {
+    for(class Field_method_declaration *var: field_method_declarations->declaration_list)
+    {
+      for(class Var_method_declaration *varr: var->var_list)
+      {
+        cout<<"AAAAAAAAAA deletion "<<varr->name<<" "<<var->dataType<<endl;
+        vars_check.erase(varr->name);
+        vars.erase(varr->name);
+      }
+    }
+  }
+  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second << endl;
+  }
+  for (auto it = vars.begin(); it != vars.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  }
 }
 
 bool Block::has_return()
@@ -463,6 +568,35 @@ Field_method_declaration::Field_method_declaration(string dataType, Var_method_d
 {
   this->dataType = dataType;
   this->var_list = var_method_declarations->getVarsList();
+  for(class Var_method_declaration *var: this->var_list)
+  {
+    cout<<"AAAAAAAAAA inside method addition "<<var->name<<" "<<dataType<<endl;
+    if(vars_check.find(var->name) != vars_check.end())
+    {
+      cout<<"Variable"+ var->name+" is already declared\n";
+      exit(0);
+    }
+    else
+    {
+      vars_check[var->name] = 1;
+      if(dataType=="boolean")
+      {
+        vars[var->name] = make_pair(2,0);
+      }
+      else if(dataType=="int")
+      {
+       vars[var->name] = make_pair(1,0); 
+      }
+    }
+  }
+  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second << endl;
+  }
+  for (auto it = vars.begin(); it != vars.end(); ++it  )
+  {
+     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  }
 }
 
 Value* Field_method_declaration::generateCode(map<string, llvm::AllocaInst *> &Old_vals, Constructs *compilerConstructs)
@@ -559,6 +693,11 @@ Assignment::Assignment(Location *location, Assign_op *assign_op, Expr *expr)
   this->location = location;
   this->assign_op = assign_op;
   this->expr = expr;
+  if(location->lit_type != expr->lit_type)
+  {
+    cout<<"Assignment Literals should be same on both sides\n";
+    exit(0);
+  }
 }
 
 Value* Assignment::generateCode(Constructs *compilerConstructs)
@@ -609,7 +748,7 @@ If_else::If_else(Expr *expr, Block *block1, Block *block2)
   if(expr->lit_type!=1)
   {
     cout<<"If condition should be boolen"<<endl;
-    // exit(0);
+    exit(0);
   }
   this->block1 = block1;
   this->block2 = block2;
@@ -1003,9 +1142,27 @@ Value *Call_out_arg::generateCode(Constructs *compilerConstructs)
 Location::Location(string name)
 {
   this->name = name;
-  this->lit_type = 0;
+  this->expr = NULL;
   this->expr_type = 0; 
+  if(vars_check.find(name) == vars_check.end())
+  {
+    cout<<"Variable "<<name<<" not found\n";
+    exit(0);
+  }
+  else
+  {
+    if(vars[name].first==3 || vars[name].first==4)
+    {
+      cout<<"Its not an array variable\n";
+      exit(0);
+    }
+    else
+    {
+      this->lit_type = vars[name].first-1;
+    }
+  }
   this->location_type=var_type::normal;
+  cout<<"Entered Location "<<name<<" "<<this->lit_type<<endl;
 }
 Location::Location(string name, Expr *expr)
 {
@@ -1013,6 +1170,33 @@ Location::Location(string name, Expr *expr)
   this->expr = expr;
   this->expr_type=0;
   this->location_type=var_type::array;
+  if(vars_check.find(name) == vars_check.end())
+  {
+    cout<<"Variable "<<name<<" not found\n";
+    exit(0);
+  }
+  else
+  {
+    if(vars[name].first==1 || vars[name].first==2)
+    {
+      cout<<"Its not an array variable\n";
+      exit(0);
+    }
+    else
+    {
+      if(expr->expr_type!=2)
+      {
+        cout<<"should be int literal\n";
+        exit(0);
+      }
+      else if(expr->getVal() >= vars[name].second and expr->getVal() < 0)
+      {
+        cout<<"Over bounds\n";
+        exit(0);
+      }
+      this->lit_type = 0;
+    }
+  }
 }
 
 Value *Location::generateCode(Constructs *compilerConstructs)
@@ -1079,7 +1263,7 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
     if(!(expr1->lit_type==0 && expr2->lit_type==0))
     {
       cout<<"Arithemetic expression should have type ints on two sides\n";
-      // exit(0);
+      exit(0);
     }
     cout<<"Arithemetic Expression "<<operation<<endl;
     this->lit_type = 0;
@@ -1089,7 +1273,7 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
     if(!(expr1->lit_type==0 && expr2->lit_type==0))
     {
       cout<<"Relation expression should have type ints on two sides\n";
-      // exit(0);
+      exit(0);
     }
     cout<<"Relation operation\n";
     this->lit_type = 1;
@@ -1099,8 +1283,8 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
 
 Value *Binary_expr::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Binay_expr "<<operation<<endl;
-  Value *left = expr1->generateCode(compilerConstructs);
+    cout<<"Entered Binay_expr "<<operation<<endl;
+    Value *left = expr1->generateCode(compilerConstructs);
     Value *right = expr2->generateCode(compilerConstructs);
     if (expr1->expr_type == 0) {
         left = compilerConstructs->Builder->CreateLoad(left);
@@ -1153,14 +1337,14 @@ Unary_expr::Unary_expr(string operation, Expr *expr)
   if(operation== "!" and expr->lit_type!=1)
   {
     cout<<"Unary expression variable should be boolean for !\n";
-    // exit(0);
+    exit(0);
   }
   else if(operation=="!")
     this->lit_type = 1;
   if(operation== "-" and expr->lit_type!=0)
   {
     cout<<"Unary expression variable should be int for -\n";
-    // exit(0);
+    exit(0);
   }
   else if(operation=="-")
     this->lit_type = 0;
