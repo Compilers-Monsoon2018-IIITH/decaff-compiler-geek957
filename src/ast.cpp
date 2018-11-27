@@ -119,7 +119,7 @@ Value *Program::generateCode()
   Value *v;
   if(fields!=NULL)
   {
-    cout<<"Entered Fields\n";
+    // cout<<"Entered Fields\n";
     v=fields->generateCode(this->compilerConstructs);
     if(v==nullptr)
     {
@@ -166,10 +166,10 @@ void Field_declarations::Push_back(Field_declaration *field_declaration)
 
 Value *Field_declarations::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered field_declarations\n";
+  // cout<<"Entered field_declarations\n";
   for(auto &i:declaration_list)
   {
-    cout<<"Iterating field_declarations\n";
+    // cout<<"Iterating field_declarations\n";
     i->generateCode(compilerConstructs);
   }
   Value *v=ConstantInt::get(compilerConstructs->Context, APInt(32, 1));
@@ -185,7 +185,7 @@ Field_declaration::Field_declaration(string dataType, Var_declarations *var_decl
   this->var_list = var_declarations->getVarsList();
   for(class Var_declaration *var: this->var_list)
   {
-    cout<<"AAAAAAAAAA addition "<<var->name<<" "<<dataType<<endl;
+    // cout<<"AAAAAAAAAA addition "<<var->name<<" "<<dataType<<endl;
     if(vars_check.find(var->name) != vars_check.end())
     {
       cout<<"Variable"+ var->name+" is already declared\n";
@@ -212,39 +212,39 @@ Field_declaration::Field_declaration(string dataType, Var_declarations *var_decl
       }
     }
   }
-  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second << endl;
-  }
-  for (auto it = vars.begin(); it != vars.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
-  }
+  // for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second << endl;
+  // }
+  // for (auto it = vars.begin(); it != vars.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  // }
 }
 
 Value *Field_declaration::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Field_declaration\n";
+  // cout<<"Entered Field_declaration\n";
   llvm::Type *ty = nullptr;
-  cout<<"datatype "<<dataType<<endl;
+  // cout<<"datatype "<<dataType<<endl;
   if(dataType=="int")
   {
-    cout<<"entered Int\n";
+    // cout<<"entered Int\n";
     ty = Type::getInt32Ty(compilerConstructs->Context);
-    cout<<"Exited Int\n";
+    // cout<<"Exited Int\n";
   }
   else if(dataType=="boolean")
   {
-    cout<<"entered boolean\n";
+    // cout<<"entered boolean\n";
     // cout<<compilerConstructs->Context<<endl;
     ty = Type::getInt1Ty(compilerConstructs->Context);
-    cout<<"Exited boolean\n";
+    // cout<<"Exited boolean\n";
   }
-  cout<<"Done with checking type\n";
+  // cout<<"Done with checking type\n";
 
   for(auto var: var_list)
   {
-    cout<<"entered var_list loop\n";
+    // cout<<"entered var_list loop\n";
     if(var->isArray())
     {
       ArrayType *arrType = ArrayType::get(ty, var->getLength());
@@ -297,7 +297,7 @@ void Method_declarations::Push_back(Method_declaration *method_declaration)
 
 Value *Method_declarations::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Method declarations\n";
+  // cout<<"Entered Method declarations\n";
   Value *V = ConstantInt::get(compilerConstructs->Context, APInt(32, 0));
   for(auto &i:method_declaration_list)
   {
@@ -319,26 +319,26 @@ Method_declaration::Method_declaration(string method_type, string name, Method_a
   {
     for(class Method_args_declaration *var: method_args_declarations->method_args_declaration_list)
     {
-      cout<<"AAAAAAAAAA deletion "<<var->name<<" "<<var->arg_type<<endl;
+      // cout<<"AAAAAAAAAA deletion "<<var->name<<" "<<var->arg_type<<endl;
       vars_check.erase(var->name);
       vars.erase(var->name);
       // vars_check[var->name] = 0;
     }
   }
-  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second << endl;
-  }
-  for (auto it = vars.begin(); it != vars.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
-  }
+  // for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second << endl;
+  // }
+  // for (auto it = vars.begin(); it != vars.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  // }
 
 }
 
 Function* Method_declaration::generateCode(Constructs *compilerConstructs)
 {
-    cout<<"Entered Method declaration\n";
+    // cout<<"Entered Method declaration\n";
     std::vector<std::string> argNames;
     std::vector<std::string> argTypes;
     std::vector<class Method_args_declaration *> args;
@@ -448,7 +448,7 @@ Method_args_declaration::Method_args_declaration(string arg_type, string name)
 {
   this->arg_type = arg_type;
   this->name = name;
-  cout<<"AAAAAAAAAA addition "<<name<<" "<<arg_type<<endl;
+  // cout<<"AAAAAAAAAA addition "<<name<<" "<<arg_type<<endl;
   if(vars_check.find(name) != vars_check.end())
   {
     cout<<"Variable"+ name+" is already declared\n";
@@ -466,14 +466,14 @@ Method_args_declaration::Method_args_declaration(string arg_type, string name)
      vars[name] = make_pair(1,0); 
     }
   }
-  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second << endl;
-  }
-  for (auto it = vars.begin(); it != vars.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
-  }
+  // for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second << endl;
+  // }
+  // for (auto it = vars.begin(); it != vars.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  // }
 }
 
 
@@ -488,20 +488,19 @@ Block::Block(Field_method_declarations *field_method_declarations, Statements *s
     {
       for(class Var_method_declaration *varr: var->var_list)
       {
-        cout<<"AAAAAAAAAA deletion "<<varr->name<<" "<<var->dataType<<endl;
         vars_check.erase(varr->name);
         vars.erase(varr->name);
       }
     }
   }
-  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second << endl;
-  }
-  for (auto it = vars.begin(); it != vars.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
-  }
+  // for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second << endl;
+  // }
+  // for (auto it = vars.begin(); it != vars.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  // }
 }
 
 bool Block::has_return()
@@ -519,7 +518,7 @@ bool Block::has_continue()
 
 Value* Block::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Block\n";
+  // cout<<"Block\n";
   Value *V;
     std::map<std::string, llvm::AllocaInst *> Old_vals;
     if(field_method_declarations!=NULL)
@@ -550,7 +549,7 @@ void Field_method_declarations::Push_back(Field_method_declaration *field_method
 
 Value* Field_method_declarations::generateCode(map<string, AllocaInst *> &oldValues, Constructs *compilerConstructs)
 {
-  cout<<"Field_method_declarations\n";
+  // cout<<"Field_method_declarations\n";
   Value *v = ConstantInt::get(compilerConstructs->Context, APInt(32, 1));
     for (auto &decl : declaration_list) {
         /// Generate the code for each declaration
@@ -570,7 +569,7 @@ Field_method_declaration::Field_method_declaration(string dataType, Var_method_d
   this->var_list = var_method_declarations->getVarsList();
   for(class Var_method_declaration *var: this->var_list)
   {
-    cout<<"AAAAAAAAAA inside method addition "<<var->name<<" "<<dataType<<endl;
+    // cout<<"AAAAAAAAAA inside method addition "<<var->name<<" "<<dataType<<endl;
     if(vars_check.find(var->name) != vars_check.end())
     {
       cout<<"Variable"+ var->name+" is already declared\n";
@@ -589,19 +588,19 @@ Field_method_declaration::Field_method_declaration(string dataType, Var_method_d
       }
     }
   }
-  for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second << endl;
-  }
-  for (auto it = vars.begin(); it != vars.end(); ++it  )
-  {
-     cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
-  }
+  // for (auto it = vars_check.begin(); it != vars_check.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second << endl;
+  // }
+  // for (auto it = vars.begin(); it != vars.end(); ++it  )
+  // {
+  //    cout << it->first << '\t' << it->second.first << "\t" << it->second.second << endl;
+  // }
 }
 
 Value* Field_method_declaration::generateCode(map<string, llvm::AllocaInst *> &Old_vals, Constructs *compilerConstructs)
 {
-  cout<<"Field_method_declaration\n";
+  // cout<<"Field_method_declaration\n";
   llvm::Function *TheFunction = compilerConstructs->Builder->GetInsertBlock()->getParent();
     for (const auto &var : var_list) {
         string varName = var->getName();
@@ -676,7 +675,7 @@ bool Statements::has_break() {
 
 Value *Statements::generateCode(Constructs* compilerConstructs)
 {
-  cout<<"Entered Statements\n";
+  // cout<<"Entered Statements\n";
   Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
   for (auto &stmt : statement_list) {
         v = stmt->generateCode(compilerConstructs);
@@ -702,7 +701,7 @@ Assignment::Assignment(Location *location, Assign_op *assign_op, Expr *expr)
 
 Value* Assignment::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Assignment\n";
+  // cout<<"Entered Assignment\n";
   Value *cur = compilerConstructs->NamedValues[location->name];
 
     if (cur == nullptr) {
@@ -744,7 +743,6 @@ Value* Assignment::generateCode(Constructs *compilerConstructs)
 If_else::If_else(Expr *expr, Block *block1, Block *block2)
 {
   this->expr = expr;
-  cout<<expr->lit_type<<endl;
   if(expr->lit_type!=1)
   {
     cout<<"If condition should be boolen"<<endl;
@@ -791,7 +789,7 @@ bool If_else::has_break() {
 
 Value* If_else::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered If_else\n";
+  // cout<<"Entered If_else\n";
   Value *cond = expr->generateCode(compilerConstructs);
     if (cond == nullptr) {
         // compilerConstructs->errors++;
@@ -808,14 +806,12 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
     bool break_if=block1->has_break();
     bool continue_if=block1->has_continue();
 
-    cout<<ret_if<<" rea "<<break_if<<" rea "<<continue_if<<" rea "<<endl;
     /// Create a conditional break and an insert point
     if (block2 == nullptr) {
         cout<<"Block2 is null pointer"<<endl;
         otherBlock = nextBlock;
     }
 
-    cout<<"hello1"<<endl;
     compilerConstructs->Builder->CreateCondBr(cond, ifBlock, otherBlock);
     compilerConstructs->Builder->SetInsertPoint(ifBlock);
 
@@ -824,7 +820,6 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
     if (if_val == nullptr) {
         return nullptr;
     }
-    cout<<"hello2"<<endl;
 
     /// Create a break for next part of the code after else block
 
@@ -837,7 +832,6 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
     ifBlock = compilerConstructs->Builder->GetInsertBlock();
     /// Create insert point for else block
 
-    cout<<"hello3"<<endl;
     Value *else_val = nullptr;
 
     if (block2 != nullptr) {
@@ -854,7 +848,6 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
         if (!ret_else)
             compilerConstructs->Builder->CreateBr(nextBlock);
     }
-    cout<<"hello4"<<endl;
 
     // Create a break for the next part of the code
     TheFunction->getBasicBlockList().push_back(nextBlock);
@@ -868,7 +861,6 @@ Value* If_else::generateCode(Constructs *compilerConstructs)
             compilerConstructs->Builder->CreateRet(ConstantInt::get(compilerConstructs->Context, APInt(32, 0)));
         }
     }
-    cout<<"hello5"<<endl;
     Value *V = ConstantInt::get(compilerConstructs->Context, APInt(32, 0));
     return V;
 }
@@ -885,7 +877,7 @@ Forr::Forr(string var_name, Expr *expr1, Expr *expr2, Block *block)
 
 Value* Forr::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered For\n";
+  // cout<<"Entered For\n";
   Value *start = expr1->generateCode(compilerConstructs);
     if (start == nullptr) {
         return nullptr;
@@ -953,7 +945,7 @@ Return::Return(Expr *expr)
 
 Value *Return::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Return\n";
+  // cout<<"Entered Return\n";
   llvm::Value *V = nullptr;
     if (expr != nullptr) {
         /// Generate IR for expression to be returned
@@ -973,7 +965,7 @@ Value *Return::generateCode(Constructs *compilerConstructs)
 
 Value *Break::generateCode(Constructs *compilerConstructs) 
 {
-  cout<<"Entered Break\n";
+  // cout<<"Entered Break\n";
   llvm::Value *V = llvm::ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
     loopInfo *currentLoop = compilerConstructs->loops->top();
     compilerConstructs->Builder->CreateBr(currentLoop->getAfterBlock());
@@ -983,7 +975,7 @@ Value *Break::generateCode(Constructs *compilerConstructs)
 //Continue
 Value *Continue::generateCode(Constructs *compilerConstructs) 
 {
-  cout<<"Entered Continue\n";
+  // cout<<"Entered Continue\n";
   llvm::Value *V = llvm::ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, 1));
     loopInfo *currentLoop = compilerConstructs->loops->top();
     Expr *condition = nullptr;
@@ -1017,7 +1009,7 @@ Method_call::Method_call(string name, Exprs *exprs)
 
 Value* Method_call::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Method_call\n";
+  // cout<<"Entered Method_call\n";
   Function *calle = compilerConstructs->TheModule->getFunction(name);
     if (calle == nullptr) {
         compilerConstructs->errors++;
@@ -1063,7 +1055,7 @@ Call_out::Call_out(string print_var, Call_out_args *call_out_args)
 
 Value* Call_out::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Call_out "<<print_var<<endl;
+  // cout<<"Entered Call_out "<<print_var<<endl;
   std::vector<llvm::Type *> argTypes;
     std::vector<Value *> Args;
     std::vector<class Call_out_arg *> args_list;
@@ -1114,17 +1106,14 @@ Call_out_arg::Call_out_arg(string Literal)
 
 Value *Call_out_arg::generateCode(Constructs *compilerConstructs)
 {
-    cout<<"Entered Call_out_arg "<<Literal<<endl;
+    // cout<<"Entered Call_out_arg "<<Literal<<endl;
     if (expr == nullptr && Literal=="") {
         compilerConstructs->errors++;
         return reportError("Invalid Callout Arg");
     }
     Value *v;
-    cout<<"HELLO1\n";
     if(expr != nullptr)
     {
-      cout<<"NOT NULL EXPR\n";
-      cout<<expr->expr_type<<endl;
       v = expr->generateCode(compilerConstructs);
       if (expr->expr_type==0) {
           v = compilerConstructs->Builder->CreateLoad(v);
@@ -1134,7 +1123,7 @@ Value *Call_out_arg::generateCode(Constructs *compilerConstructs)
     {
       v = compilerConstructs->Builder->CreateGlobalStringPtr(Literal);
     }
-    cout<<"Exited from Call_out_arg\n";
+    // cout<<"Exited from Call_out_arg\n";
     return v;
 }
 
@@ -1162,7 +1151,7 @@ Location::Location(string name)
     }
   }
   this->location_type=var_type::normal;
-  cout<<"Entered Location "<<name<<" "<<this->lit_type<<endl;
+  // cout<<"Entered Location "<<name<<" "<<this->lit_type<<endl;
 }
 Location::Location(string name, Expr *expr)
 {
@@ -1201,7 +1190,7 @@ Location::Location(string name, Expr *expr)
 
 Value *Location::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Location "<<name<<endl;
+  // cout<<"Entered Location "<<name<<endl;
   Value *V = compilerConstructs->NamedValues[name];
   if (V == nullptr) 
   {
@@ -1256,7 +1245,7 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
   this->operation = operation;
   this->expr2 = expr2;
   this->expr_type = 3;
-  cout<<"Binary "<<expr1->lit_type<<" "<<expr2->lit_type<<" "<<operation<<endl;
+  // cout<<"Binary "<<expr1->lit_type<<" "<<expr2->lit_type<<" "<<operation<<endl;
   string a = operation;
   if(((a=="+" or a=="-") or (a=="*" or (a=="/" or a=="%"))))
   {
@@ -1265,7 +1254,7 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
       cout<<"Arithemetic expression should have type ints on two sides\n";
       exit(0);
     }
-    cout<<"Arithemetic Expression "<<operation<<endl;
+    // cout<<"Arithemetic Expression "<<operation<<endl;
     this->lit_type = 0;
   }
   else if(((a=="<" or a==">") or (a=="<=" or a==">=")))
@@ -1275,15 +1264,15 @@ Binary_expr::Binary_expr(Expr *expr1, string operation, Expr *expr2)
       cout<<"Relation expression should have type ints on two sides\n";
       exit(0);
     }
-    cout<<"Relation operation\n";
+    // cout<<"Relation operation\n";
     this->lit_type = 1;
   }
-  cout<<"Binary expression "<<this->lit_type<<endl;
+  // cout<<"Binary expression "<<this->lit_type<<endl;
 }
 
 Value *Binary_expr::generateCode(Constructs *compilerConstructs)
 {
-    cout<<"Entered Binay_expr "<<operation<<endl;
+    // cout<<"Entered Binay_expr "<<operation<<endl;
     Value *left = expr1->generateCode(compilerConstructs);
     Value *right = expr2->generateCode(compilerConstructs);
     if (expr1->expr_type == 0) {
@@ -1353,7 +1342,7 @@ Unary_expr::Unary_expr(string operation, Expr *expr)
 
 Value *Unary_expr::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Unary_expr\n";
+  // cout<<"Entered Unary_expr\n";
   Value *v = expr->generateCode(compilerConstructs);
     if (expr->expr_type==0) {
         v = compilerConstructs->Builder->CreateLoad(v);
@@ -1376,7 +1365,7 @@ Bracket_expr::Bracket_expr(Expr *expr)
 
 Value *Bracket_expr::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Bracket_expr\n";
+  // cout<<"Bracket_expr\n";
   return expr->generateCode(compilerConstructs);
 }
 
@@ -1386,12 +1375,12 @@ Integer_literal::Integer_literal(int var)
   this->var = var;
   this->lit_type = 0;
   this->expr_type = 2;
-  cout<<"Int_literal "<<this->lit_type<<endl;
+  // cout<<"Int_literal "<<this->lit_type<<endl;
 }
 
 Value* Integer_literal::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Integer_lit\n";
+  // cout<<"Entered Integer_lit\n";
   Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(32, static_cast<uint64_t>(var)));
     return v;
 }
@@ -1402,7 +1391,7 @@ Char_literal::Char_literal(string var)
   this->var = var;
   this->lit_type = 2;
   this->expr_type = 2;
-  cout<<"Bool_literal "<<this->lit_type<<endl;
+  // cout<<"Bool_literal "<<this->lit_type<<endl;
 }
 
 //Bool_literal
@@ -1411,12 +1400,12 @@ Bool_literal::Bool_literal(string var)
   this->var = var;
   this->lit_type = 1;
   this->expr_type = 2;
-  cout<<"Bool_literal "<<this->lit_type<<endl;
+  // cout<<"Bool_literal "<<this->lit_type<<endl;
 }
 
 Value* Bool_literal::generateCode(Constructs *compilerConstructs)
 {
-  cout<<"Entered Bool_lit\n";
+  // cout<<"Entered Bool_lit\n";
   bool val;
     if (var == "true") val = true;
     else if (var == "false") val = false;
@@ -1427,16 +1416,3 @@ Value* Bool_literal::generateCode(Constructs *compilerConstructs)
     Value *v = ConstantInt::get(compilerConstructs->Context, llvm::APInt(1, val));
     return v;
 }
-
-
-//
-// int DFS::visit(Program *vis){
-// 	cout<<"class Program found"<<endl;
-// 	// vis->accept();
-// }
-// int DFS::visit(Program *vis)
-// {
-//   cout<<"class Program found"<<endl;
-//   // vis->accept();
-// }
-// };

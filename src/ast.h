@@ -156,24 +156,6 @@ class Visitor
     virtual int visit(Integer_literal *vis){}
     virtual int visit(Char_literal *vis){}
     virtual int visit(Bool_literal *vis){}
-		// virtual int visit(statlist *sta){}
-		// virtual int visit(stat *sta){}
-		// virtual int visit(bl *sta){}
-		// virtual int visit(expr *sta){}
-		// virtual int visit(binexp *sta){}
-		// virtual int visit(unexp *sta){}
-		// virtual int visit(loc *sta){}
-		// virtual int visit(nu *sta){}
-		// virtual int visit(ab *sta){}
-		// virtual int visit(lf *sta){}
-		// virtual int visit(fors *sta){}
-		// virtual int visit(gotos *sta){}
-		// virtual int visit(lab *sta){}
-		// virtual int visit(ifs *sta){}
-		// virtual int visit(whiles *sta){}
-		// virtual int visit(print *sta){}
-		// virtual int visit(read *sta){}
-		// virtual int visit(ass *sta){}
 };
 
 

@@ -356,21 +356,25 @@ main(int argc, char **argv)
 		fprintf(stderr, "Passing more arguments than necessary.\n");
 		fprintf(stderr, "Correct usage: bcc filename\n");
 	}
-	printf("About to start\n");
+	
+	printf("Starting\n");
 	yyin = fopen(argv[1], "r");
 	yyparse();
+	printf("Parsing Over\n");
+
+	cout<<"----------------------------->Started dfs\n";
 	DFS* dfs;
 	dfs=new DFS();
 	start->accept(dfs);
-	cout<<"Done dfs :)"<<endl;
+	cout<<"----------------------------->Done dfs :)"<<endl;
 	if(start)
 	{
-		cout<<"------------------------Started generating LLVM-IR---------------------------"<<endl;
+		cout<<"Started generating LLVM-IR"<<endl;
 		start->generateCode();
 		//cout<<"Started generating LLVM-IR"<<endl;
 		start->generateCodeDump();
+		cout<<"LLVM-IR generated\n";
 	}
-	printf("Parsing Over\n");
 }
 
 void yyerror(const char *s)
