@@ -8,11 +8,9 @@ class Program
 	void main()
 	{
 		int i;
-		callout("printf", "Enter the size of vectors: ");
 		ans = 0;
 		n = 10;
 
-		callout("printf", "Enter the elements in the vector: \n");
 
 		for i = 0, n
 		{

@@ -8,12 +8,10 @@ class Program
 	void main()
 	{
 		int n,i;
-		callout("printf", "Enter the size of vectors: ");
 		max1 = 0;
 		max2 = 0;
 		n=10;
 
-		callout("printf", "Enter the elements in the first vector: \n");
 
 		for i=0,n
 		{

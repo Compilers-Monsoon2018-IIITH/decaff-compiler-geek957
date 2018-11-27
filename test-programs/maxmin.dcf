@@ -12,7 +12,6 @@ class Program
 		maxi = 100;	
 		n = 10;
 
-		callout("printf", "Enter the elements in the first vector: \n");
 
 		for i = 0, n
 		{
